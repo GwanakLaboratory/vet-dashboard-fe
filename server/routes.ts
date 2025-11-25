@@ -1,105 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import multer from "multer";
 import { storage } from "./storage";
-import {
-  generateMockPatients,
-  generateMockVisits,
-  generateExamMaster,
-  generateMockTestResults,
-  generateQuestionTemplates,
-  generateMockQuestionnaireResponses,
-} from "./mock-data-generator";
-import {
-  insertPatientSchema,
-  insertVisitSchema,
-  insertTestResultSchema,
-  insertExamMasterSchema,
-  insertQuestionTemplateSchema,
-  insertQuestionnaireResponseSchema,
-  insertUserFilterSchema,
-  insertClusterAnalysisSchema,
-} from "@shared/schema";
-import type { ZodSchema } from "zod";
-
-// Validation helper
-function validateRequest<T>(schema: ZodSchema<T>, data: any): T {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    throw new Error(`Validation error: ${JSON.stringify(result.error.errors)}`);
-  }
-  return result.data;
-}
-
-const upload = multer({ storage: multer.memoryStorage() });
+import { seedDatabase } from "./utils/seed";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // ========================================
-  // Initialize Mock Data
-  // ========================================
-  
-  async function initializeMockData() {
-    try {
-      // Check if data already exists
-      const existingPatients = await storage.getAllPatients();
-      if (existingPatients.length > 0) {
-        console.log("Mock data already initialized");
-        return;
-      }
-
-      console.log("Initializing mock data...");
-
-      // Generate patients
-      const mockPatients = generateMockPatients(20);
-      for (const patient of mockPatients) {
-        await storage.createPatient(patient);
-      }
-
-      // Generate exam master
-      const examMasterData = generateExamMaster();
-      for (const exam of examMasterData) {
-        await storage.createExamMaster(exam);
-      }
-
-      // Get all patient animal numbers
-      const patients = await storage.getAllPatients();
-      const animalNumbers = patients.map((p) => p.animalNumber);
-
-      // Generate visits
-      const mockVisits = generateMockVisits(animalNumbers, 5);
-      for (const visit of mockVisits) {
-        await storage.createVisit(visit);
-      }
-
-      // Generate test results
-      const examMaster = await storage.getAllExamMaster();
-      const mockTestResults = generateMockTestResults(animalNumbers, examMaster, 15);
-      for (const result of mockTestResults) {
-        await storage.createTestResult(result);
-      }
-
-      // Generate question templates
-      const questionTemplates = generateQuestionTemplates();
-      const createdTemplates = [];
-      for (const template of questionTemplates) {
-        const created = await storage.createQuestionTemplate(template);
-        createdTemplates.push(created);
-      }
-
-      // Generate questionnaire responses
-      const mockResponses = generateMockQuestionnaireResponses(animalNumbers, createdTemplates, 10);
-      for (const response of mockResponses) {
-        await storage.createQuestionnaireResponse(response);
-      }
-
-      console.log("Mock data initialized successfully");
-    } catch (error) {
-      console.error("Error initializing mock data:", error);
-    }
-  }
 
   // Initialize data when server starts
-  await initializeMockData();
+  await seedDatabase();
 
   // ========================================
   // Patient Routes
@@ -435,43 +342,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ error: "Cluster not found" });
     }
     res.status(204).send();
-  });
-
-  // ========================================
-  // File Upload/Download Routes
-  // ========================================
-
-  app.post("/api/upload-excel", upload.single("file"), async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      // In a real implementation, parse the Excel file here
-      // For now, return success
-      res.json({ 
-        message: "File uploaded successfully",
-        filename: req.file.originalname,
-        size: req.file.size,
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to process file" });
-    }
-  });
-
-  app.get("/api/download/:dataType", async (req: Request, res: Response) => {
-    try {
-      const { dataType } = req.params;
-      
-      // In a real implementation, generate Excel file from data
-      // For now, return a simple response
-      res.json({ 
-        message: `Download ${dataType} data`,
-        note: "Excel generation would be implemented here",
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to generate download" });
-    }
   });
 
   const httpServer = createServer(app);

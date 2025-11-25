@@ -5,29 +5,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import Home from "@/pages/home";
-import Patients from "@/pages/patients";
-import PatientDetail from "@/pages/patient-detail";
-import Visits from "@/pages/visits";
-import Questionnaires from "@/pages/questionnaires";
-import TestResults from "@/pages/test-results";
-import BodyModel from "@/pages/body-model";
-import Filters from "@/pages/filters";
-import DataManagement from "@/pages/data-management";
+
+import WorkspacePage from "@/pages/workspace-page";
+import ResearchPage from "@/pages/research-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/patients" component={Patients} />
-      <Route path="/patients/:animalNumber" component={PatientDetail} />
-      <Route path="/visits" component={Visits} />
-      <Route path="/questionnaires" component={Questionnaires} />
-      <Route path="/test-results" component={TestResults} />
-      <Route path="/body-model" component={BodyModel} />
-      <Route path="/filters" component={Filters} />
-      <Route path="/data-management" component={DataManagement} />
+      <Route path="/" component={() => <WorkspacePage />} />
+      <Route path="/workspace" component={WorkspacePage} />
+      <Route path="/research" component={ResearchPage} />
       <Route component={NotFound} />
     </Switch>
   );

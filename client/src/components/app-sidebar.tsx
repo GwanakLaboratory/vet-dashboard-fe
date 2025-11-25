@@ -1,15 +1,18 @@
 import {
-  Home,
-  Dog,
-  Calendar,
-  ClipboardList,
-  TestTube,
-  View,
-  Filter,
-  Upload,
+  LayoutDashboard,
   Activity,
+  TestTube,
+  UserPlus,
+  FileInput,
+  Calendar as CalendarIcon,
+  Layout,
+  FileBarChart,
+  Stethoscope,
+  ImageIcon,
+  FileText,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,53 +23,50 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  {
-    title: "홈 대시보드",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "환자 관리",
-    url: "/patients",
-    icon: Dog,
-  },
-  {
-    title: "방문 기록",
-    url: "/visits",
-    icon: Calendar,
-  },
-  {
-    title: "문진 데이터",
-    url: "/questionnaires",
-    icon: ClipboardList,
-  },
-  {
-    title: "검사 결과",
-    url: "/test-results",
-    icon: TestTube,
-  },
-  {
-    title: "3D 신체 모델",
-    url: "/body-model",
-    icon: View,
-  },
-  {
-    title: "필터 & 군집",
-    url: "/filters",
-    icon: Filter,
-  },
-  {
-    title: "데이터 관리",
-    url: "/data-management",
-    icon: Upload,
-  },
+  { title: "개체 워크스페이스", url: "/workspace", icon: LayoutDashboard },
+  { title: "연구 스튜디오", url: "/research", icon: TestTube },
+];
+
+const workspaceSubItems = [
+  { title: "신규 등록", id: "section-registration", icon: UserPlus },
+  { title: "데이터 추가", id: "section-data-entry", icon: FileInput },
+  { title: "달력/타임라인", id: "section-calendar", icon: CalendarIcon },
+  { title: "개체 Overview", id: "section-overview", icon: Layout },
+  { title: "정량 검진 결과", id: "section-quantitative", icon: FileBarChart },
+  { title: "문진 뷰어", id: "section-pre-diagnosis", icon: Stethoscope },
+  { title: "영상 및 소견", id: "section-imaging", icon: ImageIcon },
+  { title: "문서(PDF) 뷰", id: "section-documents", icon: FileText },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const [activeSection, setActiveSection] = useState("");
+
+  useEffect(() => {
+    const handleScrollEvent = (e: CustomEvent) => {
+      setActiveSection(e.detail);
+    };
+
+    window.addEventListener('workspace-scroll', handleScrollEvent as EventListener);
+    return () => {
+      window.removeEventListener('workspace-scroll', handleScrollEvent as EventListener);
+    };
+  }, []);
+
+  const handleScrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      // Manually set active section for immediate feedback
+      setActiveSection(id);
+    }
+  };
 
   return (
     <Sidebar>
@@ -106,6 +106,24 @@ export function AppSidebar() {
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
+
+                    {/* Sub-navigation for Workspace */}
+                    {item.url === "/workspace" && isActive && (
+                      <SidebarMenuSub>
+                        {workspaceSubItems.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton
+                              onClick={() => handleScrollToSection(subItem.id)}
+                              isActive={activeSection === subItem.id}
+                              className="cursor-pointer transition-colors"
+                            >
+                              <subItem.icon className="w-3 h-3 mr-2" />
+                              <span>{subItem.title}</span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                 );
               })}

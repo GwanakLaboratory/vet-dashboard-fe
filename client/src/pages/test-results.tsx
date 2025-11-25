@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import {
   CheckCircle,
   TrendingUp,
   AlertTriangle,
+  User,
 } from "lucide-react";
 import {
   LineChart,
@@ -50,7 +51,12 @@ export default function TestResults() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [patientFilter, setPatientFilter] = useState<string>("all"); // 환자 필터 추가
+  
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
+  const [selectedPatientForTrend, setSelectedPatientForTrend] = useState<string | null>(null); // 추세 보기용 환자 선택
+
+  const [trendMode, setTrendMode] = useState("individual");
 
   const { data: testResults = [] } = useQuery<TestResult[]>({
     queryKey: ["/api/test-results"],
@@ -93,7 +99,9 @@ export default function TestResults() {
 
     const matchesStatus = statusFilter === "all" || result.status === statusFilter;
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesPatient = patientFilter === "all" || result.animalNumber === patientFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesPatient;
   });
 
   // Sort by test date descending
@@ -103,13 +111,24 @@ export default function TestResults() {
 
   // Get trend data for selected exam
   const getTrendData = (examCode: string) => {
-    return testResults
-      .filter((r) => r.examCode === examCode && r.value !== null)
+    let filtered = testResults
+      .filter((r) => r.examCode === examCode && r.value !== null);
+    
+    // 단일 강아지 모드일 경우 선택된 환자 데이터만 필터링
+    if (trendMode === "individual" && selectedPatientForTrend) {
+      filtered = filtered.filter(r => r.animalNumber === selectedPatientForTrend);
+    }
+
+    // 군집 모드 구현은 아직 군집 데이터가 없으므로 일단 전체(또는 필터링된) 데이터를 보여주거나,
+    // 향후 군집 로직에 맞게 수정 필요. 현재는 individual 모드에 집중.
+
+    return filtered
       .sort((a, b) => new Date(a.testDate).getTime() - new Date(b.testDate).getTime())
       .map((r) => ({
-        date: r.testDate,
+        date: r.testDate.split('T')[0], // 날짜 형식 간단하게
         value: r.value,
         status: r.status,
+        patientName: getPatientName(r.animalNumber) // 툴팁용
       }));
   };
 
@@ -190,16 +209,35 @@ export default function TestResults() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[250px]">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="검사명, 검사코드, 환자명 검색..."
+                placeholder="검사명, 코드, 환자명 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
                 data-testid="input-search-tests"
               />
             </div>
+            
+            {/* 환자 선택 필터 추가 */}
+            <Select value={patientFilter} onValueChange={setPatientFilter}>
+              <SelectTrigger className="w-[200px]">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <SelectValue placeholder="환자 선택" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 환자</SelectItem>
+                {patients.map((p) => (
+                  <SelectItem key={p.id} value={p.animalNumber}>
+                    {p.name} ({p.animalNumber})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[180px]" data-testid="select-category">
                 <SelectValue placeholder="카테고리" />
@@ -222,6 +260,15 @@ export default function TestResults() {
                 <SelectItem value="N">정상</SelectItem>
                 <SelectItem value="H">높음</SelectItem>
                 <SelectItem value="L">낮음</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={trendMode} onValueChange={setTrendMode}>
+              <SelectTrigger className="w-[150px]" data-testid="select-trend-mode">
+                <SelectValue placeholder="추세 보기" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">개별 강아지</SelectItem>
+                <SelectItem value="cluster">군집별</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -266,7 +313,7 @@ export default function TestResults() {
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
-                          {result.testDate}
+                          {result.testDate ? new Date(result.testDate).toLocaleDateString() : "-"}
                         </TableCell>
                         <TableCell>
                           <div>
@@ -326,7 +373,11 @@ export default function TestResults() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setSelectedExam(result.examCode)}
+                              onClick={() => {
+                                setSelectedExam(result.examCode);
+                                // 해당 결과의 환자를 선택
+                                setSelectedPatientForTrend(result.animalNumber);
+                              }}
                               data-testid={`button-trend-${result.examCode}`}
                             >
                               <TrendingUp className="w-4 h-4" />
@@ -354,7 +405,12 @@ export default function TestResults() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {selectedExamInfo?.examName || selectedExam} 추세 분석
+              {selectedExamInfo?.examName || selectedExam} 추세 분석 
+              {trendMode === "individual" && selectedPatientForTrend && (
+                <span className="ml-2 text-muted-foreground font-normal text-base">
+                  - {getPatientName(selectedPatientForTrend)}
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
           {trendData.length > 0 ? (
@@ -398,7 +454,7 @@ export default function TestResults() {
                     strokeWidth={2}
                     dot={{ r: 4 }}
                     activeDot={{ r: 6 }}
-                    name={`${selectedExamInfo?.examName || selectedExam} (${selectedExamInfo?.unit || ""})`}
+                    name={`${selectedExamInfo?.examName || selectedExam}`}
                   />
                 </LineChart>
               </ResponsiveContainer>

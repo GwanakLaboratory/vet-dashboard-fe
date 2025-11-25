@@ -177,6 +177,30 @@ export type InsertClusterAnalysis = z.infer<typeof insertClusterAnalysisSchema>;
 export type ClusterAnalysis = typeof clusterAnalysis.$inferSelect;
 
 // ========================================
+// 약물 처방 (Medications)
+// ========================================
+export const medications = pgTable("medications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  animalNumber: text("animal_number").notNull(), // 동물번호 (FK)
+  visitId: text("visit_id"), // 방문ID (FK, optional)
+  name: text("name").notNull(), // 약물명
+  dosage: text("dosage"), // 용량 (예: 10mg)
+  frequency: text("frequency"), // 투여빈도 (예: BID, 1일 2회)
+  duration: integer("duration"), // 투여기간 (일 단위)
+  startDate: text("start_date").notNull(), // 시작일 (ISO Date)
+  endDate: text("end_date"), // 종료일 (ISO Date)
+  category: text("category"), // 약물 카테고리 (항생제/스테로이드/심장약 등)
+  notes: text("notes"), // 메모
+});
+
+export const insertMedicationSchema = createInsertSchema(medications).omit({
+  id: true,
+});
+
+export type InsertMedication = z.infer<typeof insertMedicationSchema>;
+export type Medication = typeof medications.$inferSelect;
+
+// ========================================
 // Utility Types for Frontend
 // ========================================
 

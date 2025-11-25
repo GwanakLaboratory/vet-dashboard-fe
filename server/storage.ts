@@ -16,6 +16,8 @@ import type {
   InsertUserFilter,
   ClusterAnalysis,
   InsertClusterAnalysis,
+  Medication,
+  InsertMedication,
 } from "@shared/schema";
 
 // ========================================
@@ -83,6 +85,14 @@ export interface IStorage {
   createClusterAnalysis(cluster: InsertClusterAnalysis): Promise<ClusterAnalysis>;
   updateClusterAnalysis(id: string, cluster: Partial<InsertClusterAnalysis>): Promise<ClusterAnalysis | undefined>;
   deleteClusterAnalysis(id: string): Promise<boolean>;
+
+  // Medications
+  getAllMedications(): Promise<Medication[]>;
+  getMedication(id: string): Promise<Medication | undefined>;
+  getMedicationsByAnimalNumber(animalNumber: string): Promise<Medication[]>;
+  createMedication(medication: InsertMedication): Promise<Medication>;
+  updateMedication(id: string, medication: Partial<InsertMedication>): Promise<Medication | undefined>;
+  deleteMedication(id: string): Promise<boolean>;
 }
 
 // ========================================
@@ -98,6 +108,7 @@ export class MemStorage implements IStorage {
   private questionnaireResponses: Map<string, QuestionnaireResponse>;
   private userFilters: Map<string, UserFilter>;
   private clusterAnalysis: Map<string, ClusterAnalysis>;
+  private medications: Map<string, Medication>;
 
   constructor() {
     this.patients = new Map();
@@ -108,6 +119,7 @@ export class MemStorage implements IStorage {
     this.questionnaireResponses = new Map();
     this.userFilters = new Map();
     this.clusterAnalysis = new Map();
+    this.medications = new Map();
 
     // Initialize with mock data
     this.initializeMockData();
@@ -131,7 +143,19 @@ export class MemStorage implements IStorage {
 
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
     const id = randomUUID();
-    const patient: Patient = { ...insertPatient, id };
+    const patient: Patient = {
+      ...insertPatient,
+      id,
+      ownerName: insertPatient.ownerName ?? null,
+      species: insertPatient.species ?? null,
+      breed: insertPatient.breed ?? null,
+      gender: insertPatient.gender ?? null,
+      birthDate: insertPatient.birthDate ?? null,
+      registrationDate: insertPatient.registrationDate ?? null,
+      neutered: insertPatient.neutered ?? null,
+      weight: insertPatient.weight ?? null,
+      microchipNumber: insertPatient.microchipNumber ?? null,
+    };
     this.patients.set(id, patient);
     return patient;
   }
@@ -166,7 +190,17 @@ export class MemStorage implements IStorage {
 
   async createVisit(insertVisit: InsertVisit): Promise<Visit> {
     const id = randomUUID();
-    const visit: Visit = { ...insertVisit, id };
+    const visit: Visit = {
+      ...insertVisit,
+      id,
+      status: insertVisit.status ?? null,
+      visitType: insertVisit.visitType ?? null,
+      chiefComplaint: insertVisit.chiefComplaint ?? null,
+      diagnosis: insertVisit.diagnosis ?? null,
+      treatment: insertVisit.treatment ?? null,
+      veterinarian: insertVisit.veterinarian ?? null,
+      notes: insertVisit.notes ?? null,
+    };
     this.visits.set(id, visit);
     return visit;
   }
@@ -201,7 +235,15 @@ export class MemStorage implements IStorage {
 
   async createTestResult(insertResult: InsertTestResult): Promise<TestResult> {
     const id = randomUUID();
-    const result: TestResult = { ...insertResult, id };
+    const result: TestResult = {
+      ...insertResult,
+      id,
+      value: insertResult.value ?? null,
+      status: insertResult.status ?? null,
+      notes: insertResult.notes ?? null,
+      visitId: insertResult.visitId ?? null,
+      valueText: insertResult.valueText ?? null,
+    };
     this.testResults.set(id, result);
     return result;
   }
@@ -236,7 +278,18 @@ export class MemStorage implements IStorage {
 
   async createExamMaster(insertExam: InsertExamMaster): Promise<ExamMaster> {
     const id = randomUUID();
-    const exam: ExamMaster = { ...insertExam, id };
+    const exam: ExamMaster = {
+      ...insertExam,
+      id,
+      examType: insertExam.examType ?? null,
+      unit: insertExam.unit ?? null,
+      normalRangeMin: insertExam.normalRangeMin ?? null,
+      normalRangeMax: insertExam.normalRangeMax ?? null,
+      normalRangeText: insertExam.normalRangeText ?? null,
+      relatedBodyPart: insertExam.relatedBodyPart ?? null,
+      description: insertExam.description ?? null,
+      isQuantitative: insertExam.isQuantitative ?? null,
+    };
     this.examMaster.set(id, exam);
     return exam;
   }
@@ -267,7 +320,14 @@ export class MemStorage implements IStorage {
 
   async createQuestionTemplate(insertTemplate: InsertQuestionTemplate): Promise<QuestionTemplate> {
     const id = randomUUID();
-    const template: QuestionTemplate = { ...insertTemplate, id };
+    const template: QuestionTemplate = {
+      ...insertTemplate,
+      id,
+      options: insertTemplate.options ?? null,
+      relatedBodyPart: insertTemplate.relatedBodyPart ?? null,
+      questionType: insertTemplate.questionType ?? null,
+      displayOrder: insertTemplate.displayOrder ?? null,
+    };
     this.questionTemplates.set(id, template);
     return template;
   }
@@ -302,7 +362,11 @@ export class MemStorage implements IStorage {
 
   async createQuestionnaireResponse(insertResponse: InsertQuestionnaireResponse): Promise<QuestionnaireResponse> {
     const id = randomUUID();
-    const response: QuestionnaireResponse = { ...insertResponse, id };
+    const response: QuestionnaireResponse = {
+      ...insertResponse,
+      id,
+      visitId: insertResponse.visitId ?? null,
+    };
     this.questionnaireResponses.set(id, response);
     return response;
   }
@@ -333,7 +397,11 @@ export class MemStorage implements IStorage {
 
   async createUserFilter(insertFilter: InsertUserFilter): Promise<UserFilter> {
     const id = randomUUID();
-    const filter: UserFilter = { ...insertFilter, id };
+    const filter: UserFilter = {
+      ...insertFilter,
+      id,
+      description: insertFilter.description ?? null,
+    };
     this.userFilters.set(id, filter);
     return filter;
   }
@@ -364,7 +432,13 @@ export class MemStorage implements IStorage {
 
   async createClusterAnalysis(insertCluster: InsertClusterAnalysis): Promise<ClusterAnalysis> {
     const id = randomUUID();
-    const cluster: ClusterAnalysis = { ...insertCluster, id };
+    const cluster: ClusterAnalysis = {
+      ...insertCluster,
+      id,
+      description: insertCluster.description ?? null,
+      memberAnimalNumbers: insertCluster.memberAnimalNumbers ?? null,
+      criteria: insertCluster.criteria ?? null,
+    };
     this.clusterAnalysis.set(id, cluster);
     return cluster;
   }
@@ -379,6 +453,51 @@ export class MemStorage implements IStorage {
 
   async deleteClusterAnalysis(id: string): Promise<boolean> {
     return this.clusterAnalysis.delete(id);
+  }
+
+  // ========================================
+  // Medications
+  // ========================================
+
+  async getAllMedications(): Promise<Medication[]> {
+    return Array.from(this.medications.values());
+  }
+
+  async getMedication(id: string): Promise<Medication | undefined> {
+    return this.medications.get(id);
+  }
+
+  async getMedicationsByAnimalNumber(animalNumber: string): Promise<Medication[]> {
+    return Array.from(this.medications.values()).filter((m) => m.animalNumber === animalNumber);
+  }
+
+  async createMedication(insertMedication: InsertMedication): Promise<Medication> {
+    const id = randomUUID();
+    const medication: Medication = {
+      ...insertMedication,
+      id,
+      visitId: insertMedication.visitId ?? null,
+      dosage: insertMedication.dosage ?? null,
+      frequency: insertMedication.frequency ?? null,
+      duration: insertMedication.duration ?? null,
+      endDate: insertMedication.endDate ?? null,
+      category: insertMedication.category ?? null,
+      notes: insertMedication.notes ?? null,
+    };
+    this.medications.set(id, medication);
+    return medication;
+  }
+
+  async updateMedication(id: string, updateData: Partial<InsertMedication>): Promise<Medication | undefined> {
+    const medication = this.medications.get(id);
+    if (!medication) return undefined;
+    const updated = { ...medication, ...updateData };
+    this.medications.set(id, updated);
+    return updated;
+  }
+
+  async deleteMedication(id: string): Promise<boolean> {
+    return this.medications.delete(id);
   }
 
   // ========================================
