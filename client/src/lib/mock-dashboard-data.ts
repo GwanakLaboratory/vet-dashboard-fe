@@ -387,7 +387,53 @@ export const mockResearchData = {
         weight: (3 + (i * 0.1)).toFixed(1),
         diagnosis: ['MMVD (B2)', '슬개골 탈구 (3기)', '만성 신부전', '아토피 피부염', '건강함'][i % 5],
         lastVisit: `2024-11-${String((i % 30) + 1).padStart(2, '0')}`,
-        ast: (20 + Math.random() * 100).toFixed(0), // Normal: 10-50 (approx)
-        bun: (10 + Math.random() * 40).toFixed(1)   // Normal: 7-27
+
+        // Vitals
+        hr: (60 + Math.random() * 100).toFixed(0), // Normal: 70-160
+        rr: (10 + Math.random() * 40).toFixed(0),  // Normal: 10-30
+        temp: (37.5 + Math.random() * 2).toFixed(1), // Normal: 37.5-39.2
+
+        // CBC
+        hct: (30 + Math.random() * 30).toFixed(1), // Normal: 37-55
+        wbc: (4 + Math.random() * 20).toFixed(1),  // Normal: 6-17
+        plt: (100 + Math.random() * 400).toFixed(0), // Normal: 200-500
+
+        // Chemistry
+        ast: (20 + Math.random() * 100).toFixed(0), // Normal: 10-50
+        bun: (10 + Math.random() * 40).toFixed(1),   // Normal: 7-27
+        alp: (20 + Math.random() * 300).toFixed(0), // Normal: 23-212
+        creatinine: (0.5 + Math.random() * 3).toFixed(1), // Normal: 0.5-1.8
+        glucose: (60 + Math.random() * 100).toFixed(0), // Normal: 70-143
+        tp: (5 + Math.random() * 4).toFixed(1), // Normal: 5.2-8.2
     }))
 };
+
+export const columnDefinitions = [
+    // General
+    { key: 'id', label: '환자 ID', type: 'text', group: 'General' },
+    { key: 'name', label: '이름', type: 'text', group: 'General' },
+    { key: 'breed', label: '품종', type: 'select', group: 'General' },
+    { key: 'age', label: '나이', type: 'number', group: 'General' },
+    { key: 'gender', label: '성별', type: 'select', group: 'General' },
+    { key: 'weight', label: '체중', type: 'number', group: 'General' },
+    { key: 'diagnosis', label: '주요 진단', type: 'select', group: 'General' },
+    { key: 'lastVisit', label: '최근 방문일', type: 'text', group: 'General' },
+
+    // Vitals
+    { key: 'hr', label: 'HR (bpm)', type: 'number', group: 'Vitals', referenceRange: { min: 70, max: 160 } },
+    { key: 'rr', label: 'RR (bpm)', type: 'number', group: 'Vitals', referenceRange: { min: 10, max: 30 } },
+    { key: 'temp', label: 'Temp (°C)', type: 'number', group: 'Vitals', referenceRange: { min: 37.5, max: 39.2 } },
+
+    // CBC
+    { key: 'hct', label: 'Hct (%)', type: 'number', group: 'CBC', referenceRange: { min: 37, max: 55 } },
+    { key: 'wbc', label: 'WBC (10^9/L)', type: 'number', group: 'CBC', referenceRange: { min: 6, max: 17 } },
+    { key: 'plt', label: 'PLT (10^9/L)', type: 'number', group: 'CBC', referenceRange: { min: 200, max: 500 } },
+
+    // Chemistry
+    { key: 'ast', label: 'AST (U/L)', type: 'number', group: 'Chemistry', referenceRange: { min: 10, max: 50 } },
+    { key: 'bun', label: 'BUN (mg/dL)', type: 'number', group: 'Chemistry', referenceRange: { min: 7, max: 27 } },
+    { key: 'alp', label: 'ALP (U/L)', type: 'number', group: 'Chemistry', referenceRange: { min: 23, max: 212 } },
+    { key: 'creatinine', label: 'Creatinine (mg/dL)', type: 'number', group: 'Chemistry', referenceRange: { min: 0.5, max: 1.8 } },
+    { key: 'glucose', label: 'Glucose (mg/dL)', type: 'number', group: 'Chemistry', referenceRange: { min: 70, max: 143 } },
+    { key: 'tp', label: 'TP (g/dL)', type: 'number', group: 'Chemistry', referenceRange: { min: 5.2, max: 8.2 } },
+];

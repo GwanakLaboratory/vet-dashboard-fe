@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, FileText, ImageIcon, ClipboardList } from "lucide-react";
 import { mockPatient } from "@/lib/mock-dashboard-data";
+import { MedicalResultPopup } from "@/components/medical/medical-result-popup";
 
 export function PatientOverview() {
     const { name, breed, age, gender, tags, owner, phone, primaryVet, weight, weightTrend, heartRate, majorDiseases } = mockPatient;
@@ -64,6 +65,47 @@ export function PatientOverview() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Card id="section-quantitative">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Activity className="w-4 h-4" /> 정량 검진 결과 (최근)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {/* Vitals */}
+                        <MedicalResultPopup columnKey="hr" value={heartRate} referenceRange={{ min: 70, max: 160 }}>
+                            <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                                <div className="text-xs text-muted-foreground mb-1">심박수 (HR)</div>
+                                <div className="text-lg font-bold">{heartRate} <span className="text-xs font-normal text-muted-foreground">bpm</span></div>
+                            </div>
+                        </MedicalResultPopup>
+
+                        <MedicalResultPopup columnKey="rr" value={24} referenceRange={{ min: 10, max: 30 }}>
+                            <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                                <div className="text-xs text-muted-foreground mb-1">호흡수 (RR)</div>
+                                <div className="text-lg font-bold">24 <span className="text-xs font-normal text-muted-foreground">bpm</span></div>
+                            </div>
+                        </MedicalResultPopup>
+
+                        <MedicalResultPopup columnKey="temp" value={38.5} referenceRange={{ min: 37.5, max: 39.2 }}>
+                            <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                                <div className="text-xs text-muted-foreground mb-1">체온 (Temp)</div>
+                                <div className="text-lg font-bold">38.5 <span className="text-xs font-normal text-muted-foreground">°C</span></div>
+                            </div>
+                        </MedicalResultPopup>
+
+                        {/* Key Labs (Mock values for overview) */}
+                        <MedicalResultPopup columnKey="bun" value={32} referenceRange={{ min: 7, max: 27 }}>
+                            <div className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors border-red-200 bg-red-50/50">
+                                <div className="text-xs text-muted-foreground mb-1">BUN</div>
+                                <div className="text-lg font-bold text-red-600">32 <span className="text-xs font-normal text-muted-foreground">mg/dL</span></div>
+                            </div>
+                        </MedicalResultPopup>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Quick Navigation Chips */}
             <div className="flex flex-wrap gap-2">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Filter, Minus } from "lucide-react";
 import { mockTestResults } from "@/lib/mock-dashboard-data";
 import { useState } from "react";
+import { MedicalResultPopup } from "@/components/medical/medical-result-popup";
 
 export function QuantitativeResults() {
     const [showOnlyAbnormal, setShowOnlyAbnormal] = useState(false);
@@ -48,26 +49,34 @@ export function QuantitativeResults() {
                                 const trend = item.result > previousValue ? 'up' : item.result < previousValue ? 'down' : 'same';
 
                                 return (
-                                    <TableRow key={item.id} className="hover:bg-muted/50 cursor-pointer">
+                                    <TableRow key={item.id} className="hover:bg-muted/50">
                                         <TableCell className="font-medium">
-                                            {item.name}
-                                            <span className="text-xs text-muted-foreground ml-1">({item.category})</span>
+                                            <MedicalResultPopup columnKey={item.name.toLowerCase()} value={item.result} referenceRange={{ min: item.min, max: item.max }}>
+                                                <div className="cursor-pointer hover:underline decoration-dashed underline-offset-4">
+                                                    {item.name}
+                                                    <span className="text-xs text-muted-foreground ml-1">({item.category})</span>
+                                                </div>
+                                            </MedicalResultPopup>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={item.status === "High" ? "text-red-500 font-bold" : item.status === "Low" ? "text-blue-500 font-bold" : ""}>
-                                                {item.result}
-                                            </span>
-                                            {item.status !== "Normal" && (
-                                                <Badge
-                                                    variant="outline"
-                                                    className={`ml-2 text-[10px] ${item.status === "High"
-                                                            ? "border-red-200 text-red-500 bg-red-50"
-                                                            : "border-blue-200 text-blue-500 bg-blue-50"
-                                                        }`}
-                                                >
-                                                    {item.status}
-                                                </Badge>
-                                            )}
+                                            <MedicalResultPopup columnKey={item.name.toLowerCase()} value={item.result} referenceRange={{ min: item.min, max: item.max }}>
+                                                <div className="cursor-pointer flex items-center">
+                                                    <span className={item.status === "High" ? "text-red-500 font-bold" : item.status === "Low" ? "text-blue-500 font-bold" : ""}>
+                                                        {item.result}
+                                                    </span>
+                                                    {item.status !== "Normal" && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`ml-2 text-[10px] ${item.status === "High"
+                                                                ? "border-red-200 text-red-500 bg-red-50"
+                                                                : "border-blue-200 text-blue-500 bg-blue-50"
+                                                                }`}
+                                                        >
+                                                            {item.status}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </MedicalResultPopup>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground">{item.min} - {item.max}</TableCell>
                                         <TableCell className="text-muted-foreground">{item.unit}</TableCell>

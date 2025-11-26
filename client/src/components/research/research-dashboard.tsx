@@ -1,15 +1,11 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     BarChart2,
     Table as TableIcon,
-    Filter,
     Download,
     Sparkles,
     PieChart,
@@ -17,7 +13,10 @@ import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    Search
+    Users,
+    Activity,
+    AlertCircle,
+    FileText
 } from "lucide-react";
 import { ResearchAgentInterface } from "@/components/research/research-agent-interface";
 import {
@@ -35,46 +34,37 @@ import {
     LineChart as ReLineChart,
     Line,
 } from "recharts";
-import { mockResearchData } from "@/lib/mock-dashboard-data";
+import { mockResearchData, columnDefinitions } from "@/lib/mock-dashboard-data";
 import { DataTableFilter, FilterType } from "./data-table-filter";
+import { ColumnSelector } from "./column-selector";
+import { MedicalResultPopup } from "@/components/medical/medical-result-popup";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-type SortConfig = { key: keyof typeof mockResearchData.patients[0]; direction: 'asc' | 'desc' } | null;
-
-interface ColumnConfig {
-    key: keyof typeof mockResearchData.patients[0];
-    label: string;
-    type: FilterType;
-    options?: string[];
-    referenceRange?: { min: number; max: number };
-}
+type SortConfig = { key: string; direction: 'asc' | 'desc' } | null;
 
 export function ResearchDashboard() {
     const [chartType, setChartType] = useState("bar");
     const [sortConfig, setSortConfig] = useState<SortConfig>(null);
     const [filters, setFilters] = useState<Record<string, any>>({});
 
+    // Default selected columns: General group + key Chemistry
+    const [selectedColumnKeys, setSelectedColumnKeys] = useState<string[]>([
+        'id', 'name', 'breed', 'age', 'gender', 'weight', 'diagnosis', 'lastVisit',
+        'ast', 'bun', 'creatinine'
+    ]);
+
     const { ageDistribution, diagnosisTrend, breedDistribution, patients } = mockResearchData;
+
+    // Filter columns based on selection
+    const visibleColumns = useMemo(() => {
+        return columnDefinitions.filter(col => selectedColumnKeys.includes(col.key));
+    }, [selectedColumnKeys]);
 
     // Helper to get unique values for select options
     const getUniqueValues = (key: keyof typeof patients[0]) => {
         return Array.from(new Set(patients.map(p => p[key]))).sort();
     };
-
-    // Column Definitions
-    const columns: ColumnConfig[] = [
-        { key: 'id', label: '환자 ID', type: 'text' },
-        { key: 'name', label: '이름', type: 'text' },
-        { key: 'breed', label: '품종', type: 'select', options: getUniqueValues('breed') as string[] },
-        { key: 'age', label: '나이', type: 'number' },
-        { key: 'gender', label: '성별', type: 'select', options: ['M', 'F'] },
-        { key: 'weight', label: '체중', type: 'number' },
-        { key: 'diagnosis', label: '주요 진단', type: 'select', options: getUniqueValues('diagnosis') as string[] },
-        { key: 'ast', label: 'AST (U/L)', type: 'number', referenceRange: { min: 10, max: 50 } },
-        { key: 'bun', label: 'BUN (mg/dL)', type: 'number', referenceRange: { min: 7, max: 27 } },
-        { key: 'lastVisit', label: '최근 방문일', type: 'text' },
-    ];
 
     // Calculate Min/Max for numeric columns for visualization
     const stats = useMemo(() => {
@@ -113,7 +103,7 @@ export function ResearchDashboard() {
 
                     // Status Check (Low/Normal/High)
                     if (filterValue.status && filterValue.status.length > 0) {
-                        const col = columns.find(c => c.key === key);
+                        const col = columnDefinitions.find(c => c.key === key);
                         if (col?.referenceRange) {
                             let status = 'Normal';
                             if (numValue < col.referenceRange.min) status = 'Low';
@@ -138,11 +128,12 @@ export function ResearchDashboard() {
         // Sorting
         if (sortConfig) {
             data.sort((a, b) => {
-                const aValue = a[sortConfig.key];
-                const bValue = b[sortConfig.key];
+                const aValue = a[sortConfig.key as keyof typeof a];
+                const bValue = b[sortConfig.key as keyof typeof b];
 
                 // Handle numeric sorting
-                if (['weight', 'ast', 'bun'].includes(sortConfig.key)) {
+                const colDef = columnDefinitions.find(c => c.key === sortConfig.key);
+                if (colDef?.type === 'number') {
                     return sortConfig.direction === 'asc'
                         ? Number(aValue) - Number(bValue)
                         : Number(bValue) - Number(aValue);
@@ -157,7 +148,7 @@ export function ResearchDashboard() {
         return data;
     }, [sortConfig, filters, patients]);
 
-    const handleSort = (key: keyof typeof patients[0]) => {
+    const handleSort = (key: string) => {
         setSortConfig((current) => {
             if (current?.key === key && current.direction === 'asc') {
                 return { key, direction: 'desc' };
@@ -176,8 +167,12 @@ export function ResearchDashboard() {
         });
     };
 
-    const renderHeader = (col: ColumnConfig) => (
-        <TableHead key={col.key} className="min-w-[100px]">
+    const renderHeader = (col: typeof columnDefinitions[0]) => (
+        <TableHead
+            key={col.key}
+            className={`min-w-[120px] bg-background ${col.key === 'id' || col.key === 'name' ? 'sticky left-0 z-20 shadow-[1px_0_0_0_rgba(0,0,0,0.1)]' : ''}`}
+            style={col.key === 'name' ? { left: '80px' } : col.key === 'id' ? { left: 0 } : undefined}
+        >
             <div className="flex items-center gap-1 space-x-1">
                 <Button
                     variant="ghost"
@@ -195,8 +190,8 @@ export function ResearchDashboard() {
 
                 <DataTableFilter
                     title={col.label}
-                    type={col.type}
-                    options={col.options}
+                    type={col.type as FilterType}
+                    options={col.type === 'select' ? getUniqueValues(col.key as any) as string[] : undefined}
                     min={col.key === 'age' ? stats.age.min : col.key === 'weight' ? stats.weight.min : undefined}
                     max={col.key === 'age' ? stats.age.max : col.key === 'weight' ? stats.weight.max : undefined}
                     referenceRange={col.referenceRange}
@@ -207,10 +202,10 @@ export function ResearchDashboard() {
         </TableHead>
     );
 
-    const renderCell = (item: typeof patients[0], col: ColumnConfig) => {
-        const value = item[col.key];
+    const renderCell = (item: typeof patients[0], col: typeof columnDefinitions[0]) => {
+        const value = item[col.key as keyof typeof item];
 
-        // Medical Data Visualization (AST, BUN)
+        // Medical Data Visualization (AST, BUN, etc.)
         if (col.referenceRange) {
             const numValue = Number(value);
             const { min, max } = col.referenceRange;
@@ -226,10 +221,12 @@ export function ResearchDashboard() {
             }
 
             return (
-                <div className="flex items-center">
-                    {statusIndicator}
-                    <span className={colorClass}>{value}</span>
-                </div>
+                <MedicalResultPopup columnKey={col.key} value={value} referenceRange={col.referenceRange}>
+                    <div className="flex items-center cursor-pointer">
+                        {statusIndicator}
+                        <span className={`${colorClass} hover:underline`}>{value}</span>
+                    </div>
+                </MedicalResultPopup>
             );
         }
 
@@ -259,118 +256,67 @@ export function ResearchDashboard() {
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            {/* Main Content Tabs */}
-            <Tabs defaultValue="table" className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between mb-2">
+            <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
                     <TabsList>
-                        <TabsTrigger value="table" className="gap-2"><TableIcon className="w-4 h-4" /> 데이터 리스트</TabsTrigger>
-                        <TabsTrigger value="chart" className="gap-2"><BarChart2 className="w-4 h-4" /> 차트 분석</TabsTrigger>
-                        <TabsTrigger value="ai" className="gap-2"><Sparkles className="w-4 h-4 text-purple-500" /> AI 분석 도우미</TabsTrigger>
+                        <TabsTrigger value="overview">개요</TabsTrigger>
+                        <TabsTrigger value="patients">환자 목록</TabsTrigger>
+                        <TabsTrigger value="ai">AI 분석</TabsTrigger>
                     </TabsList>
-                    <div className="text-xs text-muted-foreground">
-                        Total: {processedData.length} records
-                    </div>
                 </div>
 
-                {/* Tab 1: Data Table */}
-                <TabsContent value="table" className="flex-1 overflow-hidden mt-0 border rounded-lg bg-card">
-                    <div className="h-full overflow-y-auto">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
-                                <TableRow>
-                                    {columns.map(col => renderHeader(col))}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {processedData.length > 0 ? (
-                                    processedData.map((patient, i) => (
-                                        <TableRow key={i}>
-                                            {columns.map(col => (
-                                                <TableCell key={col.key} className={col.key === 'id' ? 'font-medium' : ''}>
-                                                    {renderCell(patient, col)}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
-                                            검색 결과가 없습니다.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TabsContent>
-
-                {/* Tab 2: Charts */}
-                <TabsContent value="chart" className="flex-1 overflow-hidden mt-0 border rounded-lg bg-card p-4">
-                    <div className="flex flex-col h-full gap-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">데이터 시각화</h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">차트 유형:</span>
-                                <div className="flex bg-muted rounded-md p-1">
-                                    <Button
-                                        variant={chartType === "bar" ? "secondary" : "ghost"}
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() => setChartType("bar")}
-                                    >
-                                        <BarChart2 className="w-4 h-4 mr-1" /> 막대
-                                    </Button>
-                                    <Button
-                                        variant={chartType === "pie" ? "secondary" : "ghost"}
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() => setChartType("pie")}
-                                    >
-                                        <PieChart className="w-4 h-4 mr-1" /> 원형
-                                    </Button>
-                                    <Button
-                                        variant={chartType === "line" ? "secondary" : "ghost"}
-                                        size="sm"
-                                        className="h-7 px-2"
-                                        onClick={() => setChartType("line")}
-                                    >
-                                        <LineChart className="w-4 h-4 mr-1" /> 라인
-                                    </Button>
+                {/* Tab 1: Overview */}
+                <TabsContent value="overview" className="flex-1 overflow-y-auto mt-4 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">총 환자 수</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{patients.length}</div>
+                                <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">평균 연령</CardTitle>
+                                <Activity className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {(patients.reduce((acc, curr) => acc + curr.age, 0) / patients.length).toFixed(1)}세
                                 </div>
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">주요 질환</CardTitle>
+                                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">MMVD</div>
+                                <p className="text-xs text-muted-foreground">전체 환자의 32%</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">진행중인 연구</CardTitle>
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">3</div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                        <div className="flex-1 w-full min-h-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                {chartType === "bar" ? (
-                                    <BarChart data={breedDistribution}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="count" fill="#8884d8" name="환자 수" />
-                                    </BarChart>
-                                ) : chartType === "pie" ? (
-                                    <RePieChart>
-                                        <Pie
-                                            data={ageDistribution}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                            outerRadius={120}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                        >
-                                            {ageDistribution.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend />
-                                    </RePieChart>
-                                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                        <Card className="col-span-4">
+                            <CardHeader>
+                                <CardTitle>월별 진단 추세</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pl-2">
+                                <ResponsiveContainer width="100%" height={350}>
                                     <ReLineChart data={diagnosisTrend}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="month" />
@@ -381,8 +327,104 @@ export function ResearchDashboard() {
                                         <Line type="monotone" dataKey="patella" stroke="#82ca9d" name="슬개골 탈구" />
                                         <Line type="monotone" dataKey="ckd" stroke="#ff7300" name="신부전" />
                                     </ReLineChart>
-                                )}
-                            </ResponsiveContainer>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                        <Card className="col-span-3">
+                            <CardHeader>
+                                <CardTitle>환자 분포</CardTitle>
+                                <CardDescription>연령별 / 품종별 분포</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex-1 w-full min-h-0">
+                                    <ResponsiveContainer width="100%" height={350}>
+                                        {chartType === "bar" ? (
+                                            <BarChart data={breedDistribution}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="count" fill="#8884d8" name="환자 수" />
+                                            </BarChart>
+                                        ) : chartType === "pie" ? (
+                                            <RePieChart>
+                                                <Pie
+                                                    data={ageDistribution}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    labelLine={false}
+                                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                    outerRadius={120}
+                                                    fill="#8884d8"
+                                                    dataKey="value"
+                                                >
+                                                    {ageDistribution.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip />
+                                                <Legend />
+                                            </RePieChart>
+                                        ) : (
+                                            <ReLineChart data={diagnosisTrend}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="mmvd" stroke="#8884d8" name="MMVD" />
+                                                <Line type="monotone" dataKey="patella" stroke="#82ca9d" name="슬개골 탈구" />
+                                                <Line type="monotone" dataKey="ckd" stroke="#ff7300" name="신부전" />
+                                            </ReLineChart>
+                                        )}
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                {/* Tab 2: Patient List (Data Table) */}
+                <TabsContent value="patients" className="flex-1 overflow-hidden mt-0 border rounded-lg bg-card">
+                    <div className="flex flex-col h-full">
+                        <div className="p-4 border-b flex items-center justify-between">
+                            <h3 className="font-semibold">환자 데이터베이스</h3>
+                            <div className="flex items-center gap-2">
+                                <ColumnSelector
+                                    columns={columnDefinitions}
+                                    selectedColumns={selectedColumnKeys}
+                                    onSelectionChange={setSelectedColumnKeys}
+                                />
+                                <Button variant="outline" size="sm">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    내보내기
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="flex-1 w-full min-h-0 overflow-auto">
+                            <Table>
+                                <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+                                    <TableRow>
+                                        {visibleColumns.map(renderHeader)}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {processedData.map((patient) => (
+                                        <TableRow key={patient.id}>
+                                            {visibleColumns.map((col) => (
+                                                <TableCell
+                                                    key={col.key}
+                                                    className={`${col.key === 'id' || col.key === 'name' ? 'sticky left-0 z-10 bg-background/95 shadow-[1px_0_0_0_rgba(0,0,0,0.1)]' : ''}`}
+                                                    style={col.key === 'name' ? { left: '80px' } : col.key === 'id' ? { left: 0 } : undefined}
+                                                >
+                                                    {renderCell(patient, col)}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                 </TabsContent>
