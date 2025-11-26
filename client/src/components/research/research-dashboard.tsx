@@ -36,17 +36,55 @@ import {
     Line,
 } from "recharts";
 import { mockResearchData } from "@/lib/mock-dashboard-data";
+import { DataTableFilter, FilterType } from "./data-table-filter";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 type SortConfig = { key: keyof typeof mockResearchData.patients[0]; direction: 'asc' | 'desc' } | null;
 
+interface ColumnConfig {
+    key: keyof typeof mockResearchData.patients[0];
+    label: string;
+    type: FilterType;
+    options?: string[];
+    referenceRange?: { min: number; max: number };
+}
+
 export function ResearchDashboard() {
     const [chartType, setChartType] = useState("bar");
     const [sortConfig, setSortConfig] = useState<SortConfig>(null);
-    const [filters, setFilters] = useState<Record<string, string>>({});
+    const [filters, setFilters] = useState<Record<string, any>>({});
 
     const { ageDistribution, diagnosisTrend, breedDistribution, patients } = mockResearchData;
+
+    // Helper to get unique values for select options
+    const getUniqueValues = (key: keyof typeof patients[0]) => {
+        return Array.from(new Set(patients.map(p => p[key]))).sort();
+    };
+
+    // Column Definitions
+    const columns: ColumnConfig[] = [
+        { key: 'id', label: '환자 ID', type: 'text' },
+        { key: 'name', label: '이름', type: 'text' },
+        { key: 'breed', label: '품종', type: 'select', options: getUniqueValues('breed') as string[] },
+        { key: 'age', label: '나이', type: 'number' },
+        { key: 'gender', label: '성별', type: 'select', options: ['M', 'F'] },
+        { key: 'weight', label: '체중', type: 'number' },
+        { key: 'diagnosis', label: '주요 진단', type: 'select', options: getUniqueValues('diagnosis') as string[] },
+        { key: 'ast', label: 'AST (U/L)', type: 'number', referenceRange: { min: 10, max: 50 } },
+        { key: 'bun', label: 'BUN (mg/dL)', type: 'number', referenceRange: { min: 7, max: 27 } },
+        { key: 'lastVisit', label: '최근 방문일', type: 'text' },
+    ];
+
+    // Calculate Min/Max for numeric columns for visualization
+    const stats = useMemo(() => {
+        const ages = patients.map(p => p.age);
+        const weights = patients.map(p => Number(p.weight));
+        return {
+            age: { min: Math.min(...ages), max: Math.max(...ages) },
+            weight: { min: Math.min(...weights), max: Math.max(...weights) }
+        };
+    }, [patients]);
 
     // Sorting and Filtering Logic
     const processedData = useMemo(() => {
@@ -54,12 +92,47 @@ export function ResearchDashboard() {
 
         // Filtering
         Object.keys(filters).forEach((key) => {
-            const value = filters[key].toLowerCase();
-            if (value) {
-                data = data.filter((item) =>
-                    String(item[key as keyof typeof item]).toLowerCase().includes(value)
-                );
-            }
+            const filterValue = filters[key];
+            if (filterValue === undefined || filterValue === null) return;
+
+            data = data.filter((item) => {
+                const itemValue = item[key as keyof typeof item];
+
+                // Text Filter
+                if (typeof filterValue === 'string') {
+                    return String(itemValue).toLowerCase().includes(filterValue.toLowerCase());
+                }
+
+                // Number Filter (Range & Status)
+                if (typeof filterValue === 'object') {
+                    const numValue = Number(itemValue);
+
+                    // Range Check
+                    if (filterValue.min !== undefined && numValue < filterValue.min) return false;
+                    if (filterValue.max !== undefined && numValue > filterValue.max) return false;
+
+                    // Status Check (Low/Normal/High)
+                    if (filterValue.status && filterValue.status.length > 0) {
+                        const col = columns.find(c => c.key === key);
+                        if (col?.referenceRange) {
+                            let status = 'Normal';
+                            if (numValue < col.referenceRange.min) status = 'Low';
+                            else if (numValue > col.referenceRange.max) status = 'High';
+
+                            if (!filterValue.status.includes(status)) return false;
+                        }
+                    }
+                    return true;
+                }
+
+                // Select Filter (Array whitelist)
+                if (Array.isArray(filterValue)) {
+                    if (filterValue.length === 0) return true; // No selection means all
+                    return filterValue.includes(String(itemValue));
+                }
+
+                return true;
+            });
         });
 
         // Sorting
@@ -67,6 +140,13 @@ export function ResearchDashboard() {
             data.sort((a, b) => {
                 const aValue = a[sortConfig.key];
                 const bValue = b[sortConfig.key];
+
+                // Handle numeric sorting
+                if (['weight', 'ast', 'bun'].includes(sortConfig.key)) {
+                    return sortConfig.direction === 'asc'
+                        ? Number(aValue) - Number(bValue)
+                        : Number(bValue) - Number(aValue);
+                }
 
                 if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -86,52 +166,96 @@ export function ResearchDashboard() {
         });
     };
 
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
+    const handleFilterChange = (key: string, value: any) => {
+        setFilters((prev) => {
+            const next = { ...prev, [key]: value };
+            if (value === undefined) {
+                delete next[key];
+            }
+            return next;
+        });
     };
 
-    const renderHeader = (label: string, key: keyof typeof patients[0]) => (
-        <TableHead className="min-w-[100px]">
+    const renderHeader = (col: ColumnConfig) => (
+        <TableHead key={col.key} className="min-w-[100px]">
             <div className="flex items-center gap-1 space-x-1">
                 <Button
                     variant="ghost"
                     size="sm"
                     className="-ml-3 h-8 data-[state=open]:bg-accent hover:bg-transparent"
-                    onClick={() => handleSort(key)}
+                    onClick={() => handleSort(col.key)}
                 >
-                    <span>{label}</span>
-                    {sortConfig?.key === key ? (
+                    <span>{col.label}</span>
+                    {sortConfig?.key === col.key ? (
                         sortConfig.direction === 'asc' ? <ArrowUp className="ml-2 h-3 w-3" /> : <ArrowDown className="ml-2 h-3 w-3" />
                     ) : (
                         <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />
                     )}
                 </Button>
 
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-transparent">
-                            <Filter className={`h-3 w-3 ${filters[key] ? "text-primary fill-primary" : "text-muted-foreground"}`} />
-                            <span className="sr-only">Filter</span>
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="start">
-                        <div className="space-y-2">
-                            <h4 className="font-medium leading-none text-xs text-muted-foreground">필터: {label}</h4>
-                            <div className="relative">
-                                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                                <Input
-                                    placeholder="검색어 입력..."
-                                    className="h-8 pl-8 text-xs"
-                                    value={filters[key] || ""}
-                                    onChange={(e) => handleFilterChange(key, e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                <DataTableFilter
+                    title={col.label}
+                    type={col.type}
+                    options={col.options}
+                    min={col.key === 'age' ? stats.age.min : col.key === 'weight' ? stats.weight.min : undefined}
+                    max={col.key === 'age' ? stats.age.max : col.key === 'weight' ? stats.weight.max : undefined}
+                    referenceRange={col.referenceRange}
+                    currentFilter={filters[col.key]}
+                    onFilterChange={(val) => handleFilterChange(col.key, val)}
+                />
             </div>
         </TableHead>
     );
+
+    const renderCell = (item: typeof patients[0], col: ColumnConfig) => {
+        const value = item[col.key];
+
+        // Medical Data Visualization (AST, BUN)
+        if (col.referenceRange) {
+            const numValue = Number(value);
+            const { min, max } = col.referenceRange;
+            let colorClass = "text-foreground";
+            let statusIndicator = null;
+
+            if (numValue < min) {
+                colorClass = "text-blue-600 font-medium";
+                statusIndicator = <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" title="Low" />;
+            } else if (numValue > max) {
+                colorClass = "text-red-600 font-medium";
+                statusIndicator = <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" title="High" />;
+            }
+
+            return (
+                <div className="flex items-center">
+                    {statusIndicator}
+                    <span className={colorClass}>{value}</span>
+                </div>
+            );
+        }
+
+        // Existing Visual Indicators (Age, Weight)
+        if (col.key === 'age' || col.key === 'weight') {
+            const numValue = Number(value);
+            const min = col.key === 'age' ? stats.age.min : stats.weight.min;
+            const max = col.key === 'age' ? stats.age.max : stats.weight.max;
+            const percentage = ((numValue - min) / (max - min)) * 100;
+            const colorClass = col.key === 'age' ? 'bg-blue-500' : 'bg-green-500';
+
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="text-xs">{value}{col.key === 'age' ? '세' : 'kg'}</span>
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                            className={`h-full ${colorClass} rounded-full opacity-70`}
+                            style={{ width: `${Math.max(5, percentage)}%` }}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
+        return <span>{value}</span>;
+    };
 
     return (
         <div className="flex flex-col h-full space-y-4">
@@ -154,28 +278,18 @@ export function ResearchDashboard() {
                         <Table>
                             <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                 <TableRow>
-                                    {renderHeader("환자 ID", "id")}
-                                    {renderHeader("이름", "name")}
-                                    {renderHeader("품종", "breed")}
-                                    {renderHeader("나이", "age")}
-                                    {renderHeader("성별", "gender")}
-                                    {renderHeader("체중", "weight")}
-                                    {renderHeader("주요 진단", "diagnosis")}
-                                    {renderHeader("최근 방문일", "lastVisit")}
+                                    {columns.map(col => renderHeader(col))}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {processedData.length > 0 ? (
                                     processedData.map((patient, i) => (
                                         <TableRow key={i}>
-                                            <TableCell className="font-medium">{patient.id}</TableCell>
-                                            <TableCell>{patient.name}</TableCell>
-                                            <TableCell>{patient.breed}</TableCell>
-                                            <TableCell>{patient.age}세</TableCell>
-                                            <TableCell>{patient.gender}</TableCell>
-                                            <TableCell>{patient.weight}kg</TableCell>
-                                            <TableCell>{patient.diagnosis}</TableCell>
-                                            <TableCell>{patient.lastVisit}</TableCell>
+                                            {columns.map(col => (
+                                                <TableCell key={col.key} className={col.key === 'id' ? 'font-medium' : ''}>
+                                                    {renderCell(patient, col)}
+                                                </TableCell>
+                                            ))}
                                         </TableRow>
                                     ))
                                 ) : (
@@ -257,7 +371,7 @@ export function ResearchDashboard() {
                                         <Legend />
                                     </RePieChart>
                                 ) : (
-                                    <ReLineChart data={diagnosisTrendData}>
+                                    <ReLineChart data={diagnosisTrend}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="month" />
                                         <YAxis />
