@@ -215,10 +215,26 @@ export const mockQuestionnaire = {
 // 5. Imaging Findings
 export const mockImaging = {
     thumbnails: [
-        { id: 1, label: "X-ray 1" },
-        { id: 2, label: "X-ray 2" },
-        { id: 3, label: "X-ray 3" },
-        { id: 4, label: "US 1" },
+        {
+            id: 1,
+            label: "X-ray 1",
+            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_1_thumb.jpg"
+        },
+        {
+            id: 2,
+            label: "X-ray 2",
+            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_2_thumb.jpg"
+        },
+        {
+            id: 3,
+            label: "X-ray 3",
+            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_3_thumb.jpg"
+        },
+        {
+            id: 4,
+            label: "US 1",
+            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_4_thumb.jpg"
+        },
     ],
     findings: {
         title: "영상 판독 소견",
@@ -234,9 +250,48 @@ export const mockImaging = {
 
 // 6. Documents
 export const mockDocuments = [
-    { id: 1, name: "혈액검사_결과지.pdf", type: "Lab", date: "2024.05.20" },
-    { id: 2, name: "진료의뢰서.pdf", type: "Referral", date: "2024.05.19" },
-    { id: 3, name: "예방접종증명서.pdf", type: "Cert", date: "2024.05.18" },
+    {
+        id: "doc-1",
+        name: "핑핑 검진결과서.pdf",
+        date: "2024-11-20",
+        type: "검진결과",
+        path: "/documents/핑핑 검진결과서.pdf"
+    },
+    {
+        id: "doc-2",
+        name: "핑핑 사전문진표.pdf",
+        date: "2024-11-19",
+        type: "문진표",
+        path: "/documents/핑핑 사전문진표.pdf"
+    },
+    {
+        id: "doc-3",
+        name: "핑핑_문진결과.pdf",
+        date: "2024-11-18",
+        type: "문진결과",
+        path: "/documents/핑핑_문진결과.pdf"
+    },
+    {
+        id: "doc-4",
+        name: "구름(20250096_하늘).pdf",
+        date: "2024-11-15",
+        type: "검진결과",
+        path: "/documents/구름(20250096_하늘).pdf"
+    },
+    {
+        id: "doc-5",
+        name: "까미(20250097_하늘).pdf",
+        date: "2024-11-14",
+        type: "검진결과",
+        path: "/documents/까미(20250097_하늘).pdf"
+    },
+    {
+        id: "doc-6",
+        name: "핑핑이 소견.txt",
+        date: "2024-11-10",
+        type: "소견서",
+        path: "/documents/핑핑이 소견.txt"
+    }
 ];
 
 // 7. Admin / Data Integrity
@@ -249,6 +304,7 @@ export const mockAdminData = {
         { name: "초코", count: 3, ids: ["10000001", "10000045", "10000092"] },
     ],
 };
+
 
 // 8. Visit Timeline Data
 export const mockVisitTimeline = [
@@ -330,6 +386,8 @@ export const mockResearchData = {
         gender: i % 2 === 0 ? 'M' : 'F',
         weight: (3 + (i * 0.1)).toFixed(1),
         diagnosis: ['MMVD (B2)', '슬개골 탈구 (3기)', '만성 신부전', '아토피 피부염', '건강함'][i % 5],
-        lastVisit: `2024-11-${String((i % 30) + 1).padStart(2, '0')}`
+        lastVisit: `2024-11-${String((i % 30) + 1).padStart(2, '0')}`,
+        ast: (20 + Math.random() * 100).toFixed(0), // Normal: 10-50 (approx)
+        bun: (10 + Math.random() * 40).toFixed(1)   // Normal: 7-27
     }))
 };
