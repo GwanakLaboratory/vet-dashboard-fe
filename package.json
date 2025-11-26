@@ -9,9 +9,7 @@
     "build": "vite build && esbuild server/main.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/main.js",
     "check": "tsc",
-    "db:push": "drizzle-kit push",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -88,7 +86,6 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
