@@ -5,10 +5,16 @@ export const mockPatient = {
     animalNumber: "10000001",
     name: "초코",
     owner: "김철수",
+    phone: "010-1234-5678",
+    primaryVet: "김철수",
     breed: "말티즈 (Maltese)",
     gender: "Male (Castrated)",
     age: "8Y 3M",
     weight: "3.5kg",
+    weightTrend: -0.1,
+    heartRate: 110,
+    tags: ["주의 환자"],
+    majorDiseases: ["슬개골 탈구", "피부염"],
     visitHistory: [
         { date: "2024-10-15", reason: "정기 건강검진" },
         { date: "2024-05-20", reason: "피부 발진" },
@@ -170,37 +176,67 @@ export const mockGroupStats = {
 // 4. Pre-diagnosis (Questionnaire)
 export const mockQuestionnaire = {
     history: [
-        { date: "2024-10-15", text: "최근 들어 산책 시 숨이 차하는 증상이 있음. 밤에 기침을 자주 함." },
-        { date: "2024-05-20", text: "사료를 잘 먹지 않고 잠만 자려고 함." },
+        {
+            date: "2024-05-21",
+            author: "보호자 작성",
+            text: "최근에 밥을 잘 안 먹고 기운이 없어 보여요. 산책도 가기 싫어합니다.",
+            tags: ["식욕부진", "활력저하"]
+        },
+        {
+            date: "2024-05-20",
+            author: "보호자 작성",
+            text: "사료를 잘 먹지 않고 잠만 자려고 함.",
+            tags: ["식욕부진"]
+        },
+        {
+            date: "2024-05-19",
+            author: "보호자 작성",
+            text: "밤에 기침을 조금 하는 것 같아요.",
+            tags: ["기침"]
+        },
     ],
+    selectedDetail: {
+        date: "2024-05-21",
+        originalText: `"어제부터 사료를 거의 안 먹고 물만 조금 마셔요. 좋아하는 간식을 줘도 냄새만 맡고 안 먹네요.
+        그리고 평소보다 잠을 많이 자고 산책 나가자고 해도 현관에서 안 움직이려고 해요.
+        구토나 설사는 아직 없었습니다."`,
+        chiefComplaint: "식욕 부진, 활력 저하, 운동 불내성",
+        specialNote: "소화기 증상(구토/설사) 없음",
+        keywords: [
+            { text: "식욕부진", type: "default" },
+            { text: "기력저하", type: "default" },
+            { text: "구토없음", type: "outline" },
+            { text: "설사없음", type: "outline" },
+        ]
+    },
     normalizedSymptoms: ["호흡 곤란", "야간 기침", "식욕 부진", "기력 저하"],
 };
 
 // 5. Imaging Findings
-export const mockImaging = [
-    {
-        id: 1,
-        type: "X-Ray",
-        title: "Thorax Lateral",
-        thumbnail: "https://placehold.co/150x150/png?text=X-Ray",
-        findings: ["VHS 11.5 (Normal < 10.5)", "Left Atrial Enlargement"],
-        severity: "High",
-    },
-    {
-        id: 2,
-        type: "Ultrasound",
-        title: "Abdomen",
-        thumbnail: "https://placehold.co/150x150/png?text=US",
-        findings: ["Mild sludge in gallbladder", "Kidney structure normal"],
-        severity: "Low",
-    },
-];
+export const mockImaging = {
+    thumbnails: [
+        { id: 1, label: "X-ray 1" },
+        { id: 2, label: "X-ray 2" },
+        { id: 3, label: "X-ray 3" },
+        { id: 4, label: "US 1" },
+    ],
+    findings: {
+        title: "영상 판독 소견",
+        description: `흉부 방사선 상 심비대 소견 관찰됨 (VHS 11.5).
+        좌심방 확장이 의심되며, 폐수종 소견은 명확하지 않음.
+        기관지 패턴이 일부 관찰되나 노령성 변화로 추정됨.`,
+        measurements: [
+            { label: "VHS", value: "11.5", status: "High" },
+            { label: "VLAS", value: "2.1", status: "Normal" },
+        ]
+    }
+};
 
 // 6. Documents
 export const mockDocuments = [
-    { id: 1, name: "2024-10-15_BloodWork.pdf", type: "Lab Report", date: "2024-10-15" },
-    { id: 2, name: "2024-10-15_ReferralLetter.pdf", type: "Referral", date: "2024-10-15" },
-    { id: 3, name: "2023-11-10_VaccineCert.pdf", type: "Certificate", date: "2023-11-10" },
+    { id: 1, name: "혈액검사_결과지.pdf", type: "Lab", date: "2024.05.20" },
+    { id: 2, name: "진료의뢰서.pdf", type: "Referral", date: "2024.05.19" },
+    { id: 3, name: "예방접종증명서.pdf", type: "Cert", date: "2024.05.18" },
 ];
 
 // 7. Admin / Data Integrity
@@ -212,4 +248,88 @@ export const mockAdminData = {
     nameConflicts: [
         { name: "초코", count: 3, ids: ["10000001", "10000045", "10000092"] },
     ],
+};
+
+// 8. Visit Timeline Data
+export const mockVisitTimeline = [
+    {
+        date: "2024-05-21",
+        title: "정기 검진",
+        status: "completed", // completed, scheduled
+        hasLab: true,
+        hasImaging: false,
+        hasDocument: true,
+        description: "정기 건강검진 및 예방접종",
+    },
+    {
+        date: "2024-05-19",
+        title: "피부과 진료",
+        status: "completed",
+        hasLab: true,
+        hasImaging: false,
+        hasDocument: true,
+        description: "피부 발진 및 소양감 호소",
+    },
+    {
+        date: "2024-04-15",
+        title: "내과 진료",
+        status: "completed",
+        hasLab: true,
+        hasImaging: true,
+        hasDocument: false,
+        description: "구토 및 설사 증상",
+    },
+    {
+        date: "2024-03-10",
+        title: "예방접종",
+        status: "completed",
+        hasLab: false,
+        hasImaging: false,
+        hasDocument: true,
+        description: "종합백신 5차",
+    },
+    {
+        date: "2024-01-05",
+        title: "초진",
+        status: "completed",
+        hasLab: true,
+        hasImaging: true,
+        hasDocument: true,
+        description: "기초 건강검진",
+    },
+];
+
+// 9. Research Dashboard Data
+export const mockResearchData = {
+    ageDistribution: [
+        { name: "Puppy (<2)", value: 150, fill: "#8884d8" },
+        { name: "Adult (2-7)", value: 450, fill: "#82ca9d" },
+        { name: "Senior (7+)", value: 300, fill: "#ffc658" },
+        { name: "Geriatric (12+)", value: 120, fill: "#ff8042" },
+    ],
+    diagnosisTrend: [
+        { month: "1월", mmvd: 12, patella: 18, ckd: 5 },
+        { month: "2월", mmvd: 15, patella: 20, ckd: 7 },
+        { month: "3월", mmvd: 18, patella: 15, ckd: 8 },
+        { month: "4월", mmvd: 22, patella: 25, ckd: 10 },
+        { month: "5월", mmvd: 20, patella: 22, ckd: 9 },
+        { month: "6월", mmvd: 25, patella: 28, ckd: 12 },
+    ],
+    breedDistribution: [
+        { name: "말티즈", count: 320 },
+        { name: "푸들", count: 280 },
+        { name: "포메라니안", count: 210 },
+        { name: "치와와", count: 150 },
+        { name: "시츄", count: 90 },
+    ],
+    patients: Array.from({ length: 50 }).map((_, i) => ({
+        id: `P-${2024000 + i}`,
+        name: `환자_${i + 1}`,
+        breed: ['말티즈', '푸들', '포메라니안', '치와와', '시츄'][i % 5],
+        age: 8 + (i % 5),
+        gender: i % 2 === 0 ? 'M' : 'F',
+        weight: (3 + (i * 0.1)).toFixed(1),
+        diagnosis: ['MMVD (B2)', '슬개골 탈구 (3기)', '만성 신부전', '아토피 피부염', '건강함'][i % 5],
+        lastVisit: `2024-11-${String((i % 30) + 1).padStart(2, '0')}`
+    }))
 };

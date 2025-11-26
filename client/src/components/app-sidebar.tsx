@@ -34,14 +34,14 @@ const menuItems = [
 ];
 
 const workspaceSubItems = [
-  { title: "신규 등록", id: "section-registration", icon: UserPlus },
-  { title: "데이터 추가", id: "section-data-entry", icon: FileInput },
-  { title: "달력/타임라인", id: "section-calendar", icon: CalendarIcon },
   { title: "개체 Overview", id: "section-overview", icon: Layout },
+  { title: "달력/타임라인", id: "section-calendar", icon: CalendarIcon },
   { title: "정량 검진 결과", id: "section-quantitative", icon: FileBarChart },
   { title: "문진 뷰어", id: "section-pre-diagnosis", icon: Stethoscope },
   { title: "영상 및 소견", id: "section-imaging", icon: ImageIcon },
   { title: "문서(PDF) 뷰", id: "section-documents", icon: FileText },
+  { title: "신규 등록", id: "section-registration", icon: UserPlus },
+  { title: "데이터 추가", id: "section-data-entry", icon: FileInput },
 ];
 
 export function AppSidebar() {

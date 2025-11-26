@@ -88,6 +88,41 @@ export default function WorkspacePage() {
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-6 space-y-12 scroll-smooth">
+
+
+                {/* Section D: Overview */}
+                <section id="section-overview" className="space-y-4 scroll-mt-20">
+                    <h2 className="text-xl font-semibold">개체 Overview</h2>
+                    <PatientOverview />
+                </section>
+
+                {/* Section C: Calendar */}
+                <section id="section-calendar" className="space-y-4 scroll-mt-20">
+                    <VisitTimeline />
+                </section>
+
+                {/* Section E: Quantitative Results */}
+                <section id="section-quantitative" className="space-y-4 scroll-mt-20">
+                    <QuantitativeResults />
+                </section>
+
+                {/* Section F: Pre-diagnosis */}
+                <section id="section-pre-diagnosis" className="space-y-4 scroll-mt-20">
+                    <h2 className="text-xl font-semibold">문진 뷰어</h2>
+                    <PreDiagnosisViewer />
+                </section>
+
+                {/* Section G: Imaging */}
+                <section id="section-imaging" className="space-y-4 scroll-mt-20">
+                    <ImagingViewer />
+                </section>
+
+                {/* Section H: Documents */}
+                <section id="section-documents" className="space-y-4 scroll-mt-20">
+                    <h2 className="text-xl font-semibold">문서(PDF) 뷰</h2>
+                    <DocumentViewer />
+                </section>
+
                 {/* Section A: Registration (Collapsible) */}
                 <section id="section-registration" className="scroll-mt-20">
                     <Collapsible open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen} className="border rounded-lg bg-card">
@@ -124,39 +159,6 @@ export default function WorkspacePage() {
                             <VisitDataEntry />
                         </CollapsibleContent>
                     </Collapsible>
-                </section>
-
-                {/* Section C: Calendar */}
-                <section id="section-calendar" className="space-y-4 scroll-mt-20">
-                    <VisitTimeline />
-                </section>
-
-                {/* Section D: Overview */}
-                <section id="section-overview" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">개체 Overview</h2>
-                    <PatientOverview />
-                </section>
-
-                {/* Section E: Quantitative Results */}
-                <section id="section-quantitative" className="space-y-4 scroll-mt-20">
-                    <QuantitativeResults />
-                </section>
-
-                {/* Section F: Pre-diagnosis */}
-                <section id="section-pre-diagnosis" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">문진 뷰어</h2>
-                    <PreDiagnosisViewer />
-                </section>
-
-                {/* Section G: Imaging */}
-                <section id="section-imaging" className="space-y-4 scroll-mt-20">
-                    <ImagingViewer />
-                </section>
-
-                {/* Section H: Documents */}
-                <section id="section-documents" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">문서(PDF) 뷰</h2>
-                    <DocumentViewer />
                 </section>
             </main>
         </div>

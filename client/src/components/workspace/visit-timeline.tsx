@@ -3,10 +3,20 @@ import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FileText, Activity, AlertCircle } from "lucide-react";
+import { FileText, Activity, AlertCircle, CheckCircle2, FlaskConical, Image as ImageIcon } from "lucide-react";
+import { mockVisitTimeline } from "@/lib/mock-dashboard-data";
+import { format, parseISO, isSameDay } from "date-fns";
 
 export function VisitTimeline() {
     const [date, setDate] = useState<Date | undefined>(new Date());
+
+    // Find visit data for the selected date
+    const selectedVisit = date
+        ? mockVisitTimeline.find((visit) => isSameDay(parseISO(visit.date), date))
+        : undefined;
+
+    // Dates with visits for calendar modifiers
+    const visitDates = mockVisitTimeline.map((visit) => parseISO(visit.date));
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -16,24 +26,61 @@ export function VisitTimeline() {
                     <CardTitle className="text-lg">방문 캘린더</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        className="rounded-md border"
-                    />
-                    <div className="mt-4 space-y-2">
-                        <div className="text-sm font-medium">2024년 5월 21일 방문</div>
-                        <div className="p-3 border rounded-md bg-muted/10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline">정기 검진</Badge>
-                                <span className="text-xs text-muted-foreground">김철수 수의사</span>
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            className="rounded-md border shadow-sm"
+                            modifiers={{
+                                hasVisit: visitDates,
+                            }}
+                            modifiersStyles={{
+                                hasVisit: {
+                                    fontWeight: "bold",
+                                    textDecoration: "underline",
+                                    color: "var(--primary)",
+                                },
+                            }}
+                        />
+                    </div>
+                    <div className="mt-4 space-y-2 min-h-[100px]">
+                        {selectedVisit ? (
+                            <>
+                                <div className="text-sm font-medium">
+                                    {format(parseISO(selectedVisit.date), "yyyy년 M월 d일")} 방문
+                                </div>
+                                <div className="p-3 border rounded-md bg-muted/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Badge variant="outline">{selectedVisit.title}</Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                            {selectedVisit.status === "completed" ? "진료 완료" : "예약됨"}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-4 text-sm text-muted-foreground">
+                                        {selectedVisit.hasLab && (
+                                            <span className="flex items-center gap-1" title="검사 결과 있음">
+                                                <FlaskConical className="w-3 h-3" /> 검사
+                                            </span>
+                                        )}
+                                        {selectedVisit.hasImaging && (
+                                            <span className="flex items-center gap-1" title="영상 자료 있음">
+                                                <ImageIcon className="w-3 h-3" /> 영상
+                                            </span>
+                                        )}
+                                        {selectedVisit.hasDocument && (
+                                            <span className="flex items-center gap-1" title="문서 있음">
+                                                <FileText className="w-3 h-3" /> 문서
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-sm text-muted-foreground text-center py-4">
+                                선택한 날짜에 방문 기록이 없습니다.
                             </div>
-                            <div className="flex gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> 검사 3건</span>
-                                <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> 문서 1건</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -46,18 +93,35 @@ export function VisitTimeline() {
                 <CardContent>
                     <ScrollArea className="w-full whitespace-nowrap rounded-md border">
                         <div className="flex w-max space-x-4 p-4">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="w-[200px] shrink-0 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                            {mockVisitTimeline.map((visit, i) => (
+                                <div
+                                    key={i}
+                                    className="w-[180px] shrink-0 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                                    onClick={() => setDate(parseISO(visit.date))}
+                                >
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="font-bold">24.05.{20 - i}</span>
-                                        <Badge variant={i === 1 ? "default" : "secondary"}>
-                                            {i === 1 ? "최근" : "완료"}
+                                        <span className="font-bold text-sm">
+                                            {format(parseISO(visit.date), "yy.MM.dd")}
+                                        </span>
+                                        <Badge variant={i === 0 ? "default" : "secondary"} className="text-[10px]">
+                                            {i === 0 ? "최근" : "완료"}
                                         </Badge>
                                     </div>
-                                    <p className="text-sm font-medium mb-1">피부염 치료</p>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        <Badge variant="outline" className="text-[10px] px-1">ALT ↑</Badge>
-                                        <Badge variant="outline" className="text-[10px] px-1">소견서</Badge>
+                                    <p className="text-sm font-medium mb-2 truncate" title={visit.title}>
+                                        {visit.title}
+                                    </p>
+
+                                    {/* Simplified Data Checks */}
+                                    <div className="flex items-center gap-3 mt-2 text-muted-foreground">
+                                        <div className={`flex items-center gap-1 ${visit.hasLab ? "text-primary" : "opacity-20"}`}>
+                                            <FlaskConical className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className={`flex items-center gap-1 ${visit.hasImaging ? "text-primary" : "opacity-20"}`}>
+                                            <ImageIcon className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className={`flex items-center gap-1 ${visit.hasDocument ? "text-primary" : "opacity-20"}`}>
+                                            <FileText className="w-3.5 h-3.5" />
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -66,14 +130,17 @@ export function VisitTimeline() {
                     </ScrollArea>
 
                     {/* Selected Visit Detail Preview */}
-                    <div className="mt-6 border rounded-lg p-4">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4 text-red-500" /> 주요 이상 소견 (24.05.19)
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            ALT 수치가 지난 방문 대비 15% 상승했습니다. 식이 알러지 반응이 의심되며, 처방 사료 변경을 권장했습니다.
-                        </p>
-                    </div>
+                    {selectedVisit && (
+                        <div className="mt-6 border rounded-lg p-4">
+                            <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-primary" />
+                                진료 메모 ({format(parseISO(selectedVisit.date), "yy.MM.dd")})
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                {selectedVisit.description}
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
