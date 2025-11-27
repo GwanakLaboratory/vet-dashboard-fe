@@ -15,12 +15,19 @@ import { cn } from "@/lib/utils";
 export function TrendChart() {
     // 1. State for filters
     const [selectedCategory, setSelectedCategory] = useState<string>("All");
-    const [selectedItems, setSelectedItems] = useState<string[]>([]);
-    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>({
         from: subMonths(new Date(), 6),
         to: new Date(),
     });
     const [showReferenceLines, setShowReferenceLines] = useState(true);
+
+    // Initialize selection with the first item if empty
+    useMemo(() => {
+        if (selectedItemIds.length === 0 && mockTestResults.length > 0) {
+            setSelectedItemIds([mockTestResults[0].id]);
+        }
+    }, []);
 
     // 2. Extract unique categories and items
     const categories = useMemo(() => {
@@ -33,41 +40,66 @@ export function TrendChart() {
         return mockTestResults.filter(item => item.category === selectedCategory);
     }, [selectedCategory]);
 
+    // Toggle Item Selection
+    const toggleItem = (itemId: string) => {
+        setSelectedItemIds(prev => {
+            if (prev.includes(itemId)) {
+                // Don't allow deselecting the last item
+                if (prev.length === 1) return prev;
+                return prev.filter(id => id !== itemId);
+            } else {
+                return [...prev, itemId];
+            }
+        });
+    };
+
     // 3. Prepare Chart Data
-    // We need to transform the data structure. 
-    // mockTestResults has `history` array for each item.
-    // We want to plot multiple items on the same timeline if selected.
-    // However, different items have different units/scales, so multi-axis might be needed or just one item at a time is better for detailed view.
-    // Let's support selecting ONE primary item for detailed analysis, or multiple for comparison (normalized?).
-    // For now, let's allow selecting ONE item to show its detailed trend with reference lines.
-
-    const [primaryItemId, setPrimaryItemId] = useState<string>(mockTestResults[0]?.id || "");
-
-    const primaryItem = mockTestResults.find(item => item.id === primaryItemId);
-
     const chartData = useMemo(() => {
-        if (!primaryItem) return [];
+        if (selectedItemIds.length === 0) return [];
 
-        // Combine current result with history
-        // Assuming history is ordered descending (recent first), we reverse it for the chart
-        const historyData = [...primaryItem.history].reverse().map((h, index) => ({
-            date: format(subMonths(new Date(), primaryItem.history.length - index), "yyyy-MM-dd"), // Mock dates for history if not provided
-            value: h.value,
-            min: primaryItem.min,
-            max: primaryItem.max,
-        }));
+        const selectedItems = mockTestResults.filter(item => selectedItemIds.includes(item.id));
 
-        // Add current result
-        const currentData = {
-            date: format(new Date(), "yyyy-MM-dd"),
-            value: primaryItem.result,
-            min: primaryItem.min,
-            max: primaryItem.max,
-        };
+        // Collect all unique dates and sort them
+        const allDates = new Set<string>();
+        selectedItems.forEach(item => {
+            item.history.forEach(h => allDates.add(h.date));
+            allDates.add(format(new Date(), "yyyy-MM-dd")); // Add current date
+        });
 
-        return [...historyData, currentData];
-    }, [primaryItem]);
+        const sortedDates = Array.from(allDates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
+        // Create data points
+        let data = sortedDates.map(date => {
+            const point: any = { date };
+            selectedItems.forEach(item => {
+                // Check history
+                const historyEntry = item.history.find(h => h.date === date);
+                if (historyEntry) {
+                    point[item.id] = historyEntry.value;
+                }
+                // Check current result (assuming today's date)
+                if (date === format(new Date(), "yyyy-MM-dd")) {
+                    point[item.id] = item.result;
+                }
+            });
+            return point;
+        });
+
+        // Filter by Date Range
+        if (dateRange?.from && dateRange?.to) {
+            data = data.filter(d => {
+                const date = parseISO(d.date);
+                // Compare dates (inclusive)
+                return (isAfter(date, dateRange.from!) || date.getTime() === dateRange.from!.getTime()) &&
+                    (isBefore(date, dateRange.to!) || date.getTime() === dateRange.to!.getTime());
+            });
+        }
+
+        return data;
+    }, [selectedItemIds, dateRange]);
+
+    // Colors for lines
+    const colors = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#be185d'];
 
     return (
         <Card className="col-span-2">
@@ -75,7 +107,7 @@ export function TrendChart() {
                 <div className="flex items-center justify-between">
                     <CardTitle>추적 검사 그래프 (Trend Analysis)</CardTitle>
                     <div className="flex items-center gap-2">
-                        {/* Date Range Picker (Simplified) */}
+                        {/* Date Range Picker */}
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" size="sm" className={cn("justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
@@ -100,7 +132,7 @@ export function TrendChart() {
                                     mode="range"
                                     defaultMonth={dateRange?.from}
                                     selected={dateRange}
-                                    onSelect={(range: any) => setDateRange(range)}
+                                    onSelect={setDateRange}
                                     numberOfMonths={2}
                                 />
                             </PopoverContent>
@@ -134,8 +166,8 @@ export function TrendChart() {
                                         <div key={item.id} className="flex items-center space-x-2">
                                             <Checkbox
                                                 id={item.id}
-                                                checked={primaryItemId === item.id}
-                                                onCheckedChange={() => setPrimaryItemId(item.id)}
+                                                checked={selectedItemIds.includes(item.id)}
+                                                onCheckedChange={() => toggleItem(item.id)}
                                             />
                                             <label
                                                 htmlFor={item.id}
@@ -154,24 +186,29 @@ export function TrendChart() {
                                 id="show-ref"
                                 checked={showReferenceLines}
                                 onCheckedChange={(checked) => setShowReferenceLines(checked as boolean)}
+                                disabled={selectedItemIds.length > 1}
                             />
-                            <Label htmlFor="show-ref">정상 범위 표시 (Reference Range)</Label>
+                            <Label htmlFor="show-ref" className={selectedItemIds.length > 1 ? "text-muted-foreground" : ""}>
+                                정상 범위 표시 (Single Item Only)
+                            </Label>
                         </div>
                     </div>
 
                     {/* Chart Area */}
                     <div className="flex-1 min-h-[400px] border rounded-lg p-4 bg-slate-50/50">
-                        {primaryItem ? (
+                        {selectedItemIds.length > 0 ? (
                             <div className="h-full w-full">
                                 <div className="mb-4">
-                                    <h3 className="text-lg font-bold flex items-center gap-2">
-                                        {primaryItem.name}
-                                        <span className="text-sm font-normal text-muted-foreground">({primaryItem.category})</span>
+                                    <h3 className="text-lg font-bold flex flex-wrap gap-2">
+                                        {selectedItemIds.map((id, idx) => {
+                                            const item = mockTestResults.find(i => i.id === id);
+                                            return (
+                                                <span key={id} style={{ color: colors[idx % colors.length] }}>
+                                                    {item?.name}
+                                                </span>
+                                            );
+                                        })}
                                     </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Current: <span className="font-bold text-foreground">{primaryItem.result} {primaryItem.unit}</span>
-                                        {' '} | Reference: {primaryItem.min} - {primaryItem.max} {primaryItem.unit}
-                                    </p>
                                 </div>
                                 <ResponsiveContainer width="100%" height={350}>
                                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -182,20 +219,35 @@ export function TrendChart() {
                                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                         />
                                         <Legend />
-                                        {showReferenceLines && (
-                                            <ReferenceLine y={primaryItem.max} label="Max" stroke="red" strokeDasharray="3 3" />
-                                        )}
-                                        {showReferenceLines && (
-                                            <ReferenceLine y={primaryItem.min} label="Min" stroke="blue" strokeDasharray="3 3" />
-                                        )}
-                                        <Line
-                                            type="monotone"
-                                            dataKey="value"
-                                            stroke="#2563eb"
-                                            strokeWidth={2}
-                                            activeDot={{ r: 8 }}
-                                            name={primaryItem.name}
-                                        />
+                                        {/* Reference Lines - Only show if 1 item selected */}
+                                        {showReferenceLines && selectedItemIds.length === 1 && (() => {
+                                            const item = mockTestResults.find(i => i.id === selectedItemIds[0]);
+                                            if (!item) return null;
+                                            return (
+                                                <>
+                                                    <ReferenceLine y={item.max} label="Max" stroke="red" strokeDasharray="3 3" />
+                                                    <ReferenceLine y={item.min} label="Min" stroke="blue" strokeDasharray="3 3" />
+                                                </>
+                                            );
+                                        })()}
+
+                                        {/* Render Lines for each selected item */}
+                                        {selectedItemIds.map((id, idx) => {
+                                            const item = mockTestResults.find(i => i.id === id);
+                                            if (!item) return null;
+                                            return (
+                                                <Line
+                                                    key={id}
+                                                    type="monotone"
+                                                    dataKey={id}
+                                                    name={item.name}
+                                                    stroke={colors[idx % colors.length]}
+                                                    strokeWidth={2}
+                                                    activeDot={{ r: 8 }}
+                                                    connectNulls
+                                                />
+                                            );
+                                        })}
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
