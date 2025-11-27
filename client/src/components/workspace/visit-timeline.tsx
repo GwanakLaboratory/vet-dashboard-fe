@@ -3,11 +3,19 @@ import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FileText, Activity, AlertCircle, CheckCircle2, FlaskConical, Image as ImageIcon } from "lucide-react";
-import { mockVisitTimeline } from "@/lib/mock-dashboard-data";
+import { FileText, Activity, AlertCircle, CheckCircle2, FlaskConical, Image as ImageIcon, ClipboardList, Stethoscope, ArrowRight } from "lucide-react";
+import { mockVisitTimeline, mockDocuments } from "@/lib/mock-dashboard-data";
 import { format, parseISO, isSameDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 
-export function VisitTimeline() {
+interface VisitTimelineProps {
+    onNavigateToDocument?: (docId: string) => void;
+    onNavigateToQuestionnaire?: () => void;
+    onNavigateToLab?: () => void;
+    onNavigateToImaging?: () => void;
+}
+
+export function VisitTimeline({ onNavigateToDocument, onNavigateToQuestionnaire, onNavigateToLab, onNavigateToImaging }: VisitTimelineProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
 
     // Find visit data for the selected date
@@ -17,6 +25,16 @@ export function VisitTimeline() {
 
     // Dates with visits for calendar modifiers
     const visitDates = mockVisitTimeline.map((visit) => parseISO(visit.date));
+
+    const getDocIcon = (type: string) => {
+        switch (type) {
+            case '검진결과': return <FlaskConical className="w-4 h-4 text-blue-500" />;
+            case '문진표': return <ClipboardList className="w-4 h-4 text-orange-500" />;
+            case '문진결과': return <FileText className="w-4 h-4 text-green-500" />;
+            case '소견서': return <Stethoscope className="w-4 h-4 text-purple-500" />;
+            default: return <FileText className="w-4 h-4" />;
+        }
+    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -57,21 +75,21 @@ export function VisitTimeline() {
                                             {selectedVisit.status === "completed" ? "진료 완료" : "예약됨"}
                                         </span>
                                     </div>
-                                    <div className="flex gap-4 text-sm text-muted-foreground">
+                                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                         {selectedVisit.hasLab && (
-                                            <span className="flex items-center gap-1" title="검사 결과 있음">
-                                                <FlaskConical className="w-3 h-3" /> 검사
-                                            </span>
+                                            <Badge variant="secondary" className="font-normal">
+                                                <FlaskConical className="w-3 h-3 mr-1" /> 검사
+                                            </Badge>
                                         )}
                                         {selectedVisit.hasImaging && (
-                                            <span className="flex items-center gap-1" title="영상 자료 있음">
-                                                <ImageIcon className="w-3 h-3" /> 영상
-                                            </span>
+                                            <Badge variant="secondary" className="font-normal">
+                                                <ImageIcon className="w-3 h-3 mr-1" /> 영상
+                                            </Badge>
                                         )}
                                         {selectedVisit.hasDocument && (
-                                            <span className="flex items-center gap-1" title="문서 있음">
-                                                <FileText className="w-3 h-3" /> 문서
-                                            </span>
+                                            <Badge variant="secondary" className="font-normal">
+                                                <FileText className="w-3 h-3 mr-1" /> 문서
+                                            </Badge>
                                         )}
                                     </div>
                                 </div>
@@ -129,16 +147,72 @@ export function VisitTimeline() {
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
 
-                    {/* Selected Visit Detail Preview */}
+                    {/* Selected Visit Detail Preview - Navigation Hub */}
                     {selectedVisit && (
-                        <div className="mt-6 border rounded-lg p-4">
-                            <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <div className="mt-6 space-y-4">
+                            <h3 className="font-semibold flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-primary" />
-                                진료 메모 ({format(parseISO(selectedVisit.date), "yy.MM.dd")})
+                                진료 데이터 바로가기 ({format(parseISO(selectedVisit.date), "yy.MM.dd")})
                             </h3>
-                            <p className="text-sm text-muted-foreground">
-                                {selectedVisit.description}
-                            </p>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {/* 1. Quantitative Results */}
+                                {selectedVisit.hasLab && (
+                                    <div
+                                        className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 text-center h-32"
+                                        onClick={onNavigateToLab}
+                                    >
+                                        <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+                                            <FlaskConical className="w-6 h-6" />
+                                        </div>
+                                        <span className="text-sm font-medium">정량 검진 결과</span>
+                                    </div>
+                                )}
+
+                                {/* 2. Imaging */}
+                                {selectedVisit.hasImaging && (
+                                    <div
+                                        className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 text-center h-32"
+                                        onClick={onNavigateToImaging}
+                                    >
+                                        <div className="p-2 bg-purple-100 rounded-full text-purple-600">
+                                            <ImageIcon className="w-6 h-6" />
+                                        </div>
+                                        <span className="text-sm font-medium">영상 및 소견</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 3. Documents */}
+                            {mockDocuments.filter(doc => isSameDay(parseISO(doc.date), parseISO(selectedVisit.date))).length > 0 && (
+                                <div className="mt-4">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-primary" />
+                                        관련 문서 (PDF)
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {mockDocuments
+                                            .filter(doc => isSameDay(parseISO(doc.date), parseISO(selectedVisit.date)))
+                                            .map(doc => (
+                                                <div
+                                                    key={doc.id}
+                                                    className="flex items-center gap-2 p-3 border rounded-md bg-muted/20 text-sm hover:bg-muted/50 cursor-pointer transition-colors group"
+                                                    onClick={() => onNavigateToDocument?.(doc.id)}
+                                                >
+                                                    <div className="shrink-0 p-1.5 bg-background rounded-md border">
+                                                        {getDocIcon(doc.type)}
+                                                    </div>
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="truncate font-medium group-hover:text-primary transition-colors">{doc.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{doc.type}</span>
+                                                    </div>
+                                                    <ArrowRight className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-primary" />
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

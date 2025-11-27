@@ -10,6 +10,7 @@ import { QuantitativeResults } from "@/components/workspace/quantitative-results
 import { PreDiagnosisViewer } from "@/components/workspace/pre-diagnosis-viewer";
 import { ImagingViewer } from "@/components/workspace/imaging-viewer";
 import { DocumentViewer } from "@/components/workspace/document-viewer";
+import { TrendChart } from "@/components/workspace/trend-chart";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +18,7 @@ export default function WorkspacePage() {
     const { toast } = useToast();
     const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
     const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
+    const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
     // Scroll Spy Logic: Dispatch custom event for Sidebar to listen
     useEffect(() => {
@@ -50,6 +52,35 @@ export default function WorkspacePage() {
             title: action,
             description: `${action} 기능이 실행되었습니다.`,
         });
+    };
+
+    const handleNavigateToDocument = (docId: string) => {
+        setSelectedDocId(docId);
+        const el = document.getElementById("section-documents");
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    const handleNavigateToQuestionnaire = () => {
+        const el = document.getElementById("section-pre-diagnosis");
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    const handleNavigateToLab = () => {
+        const el = document.getElementById("section-quantitative");
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    const handleNavigateToImaging = () => {
+        const el = document.getElementById("section-imaging");
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     return (
@@ -98,19 +129,28 @@ export default function WorkspacePage() {
 
                 {/* Section C: Calendar */}
                 <section id="section-calendar" className="space-y-4 scroll-mt-20">
-                    <VisitTimeline />
+                    <VisitTimeline
+                        onNavigateToDocument={handleNavigateToDocument}
+                        onNavigateToQuestionnaire={handleNavigateToQuestionnaire}
+                        onNavigateToLab={handleNavigateToLab}
+                        onNavigateToImaging={handleNavigateToImaging}
+                    />
                 </section>
 
                 {/* Section E: Quantitative Results */}
                 <section id="section-quantitative" className="space-y-4 scroll-mt-20">
-                    <QuantitativeResults />
+                    <h2 className="text-xl font-semibold">정량 검진 결과</h2>
+                    <div className="space-y-6">
+                        <QuantitativeResults />
+                        <TrendChart />
+                    </div>
                 </section>
 
-                {/* Section F: Pre-diagnosis */}
-                <section id="section-pre-diagnosis" className="space-y-4 scroll-mt-20">
+                {/* Section F: Pre-diagnosis (Removed) */}
+                {/* <section id="section-pre-diagnosis" className="space-y-4 scroll-mt-20">
                     <h2 className="text-xl font-semibold">문진 뷰어</h2>
                     <PreDiagnosisViewer />
-                </section>
+                </section> */}
 
                 {/* Section G: Imaging */}
                 <section id="section-imaging" className="space-y-4 scroll-mt-20">
@@ -120,7 +160,7 @@ export default function WorkspacePage() {
                 {/* Section H: Documents */}
                 <section id="section-documents" className="space-y-4 scroll-mt-20">
                     <h2 className="text-xl font-semibold">문서(PDF) 뷰</h2>
-                    <DocumentViewer />
+                    <DocumentViewer selectedDocId={selectedDocId} />
                 </section>
 
                 {/* Section A: Registration (Collapsible) */}

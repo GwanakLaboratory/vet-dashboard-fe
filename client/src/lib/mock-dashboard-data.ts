@@ -253,42 +253,42 @@ export const mockDocuments = [
     {
         id: "doc-1",
         name: "핑핑 검진결과서.pdf",
-        date: "2024-11-20",
+        date: "2024-05-21",
         type: "검진결과",
         path: "/documents/핑핑 검진결과서.pdf"
     },
     {
         id: "doc-2",
         name: "핑핑 사전문진표.pdf",
-        date: "2024-11-19",
+        date: "2024-05-21",
         type: "문진표",
         path: "/documents/핑핑 사전문진표.pdf"
     },
     {
         id: "doc-3",
         name: "핑핑_문진결과.pdf",
-        date: "2024-11-18",
+        date: "2024-05-19",
         type: "문진결과",
         path: "/documents/핑핑_문진결과.pdf"
     },
     {
         id: "doc-4",
         name: "구름(20250096_하늘).pdf",
-        date: "2024-11-15",
+        date: "2024-04-15",
         type: "검진결과",
         path: "/documents/구름(20250096_하늘).pdf"
     },
     {
         id: "doc-5",
         name: "까미(20250097_하늘).pdf",
-        date: "2024-11-14",
+        date: "2024-04-15",
         type: "검진결과",
         path: "/documents/까미(20250097_하늘).pdf"
     },
     {
         id: "doc-6",
         name: "핑핑이 소견.txt",
-        date: "2024-11-10",
+        date: "2024-03-10",
         type: "소견서",
         path: "/documents/핑핑이 소견.txt"
     }
@@ -315,6 +315,7 @@ export const mockVisitTimeline = [
         hasLab: true,
         hasImaging: false,
         hasDocument: true,
+        hasQuestionnaire: true,
         description: "정기 건강검진 및 예방접종",
     },
     {
@@ -324,6 +325,7 @@ export const mockVisitTimeline = [
         hasLab: true,
         hasImaging: false,
         hasDocument: true,
+        hasQuestionnaire: true,
         description: "피부 발진 및 소양감 호소",
     },
     {
@@ -333,6 +335,7 @@ export const mockVisitTimeline = [
         hasLab: true,
         hasImaging: true,
         hasDocument: false,
+        hasQuestionnaire: false,
         description: "구토 및 설사 증상",
     },
     {
@@ -342,6 +345,7 @@ export const mockVisitTimeline = [
         hasLab: false,
         hasImaging: false,
         hasDocument: true,
+        hasQuestionnaire: false,
         description: "종합백신 5차",
     },
     {

@@ -106,22 +106,6 @@ export function PatientOverview() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Quick Navigation Chips */}
-            <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" className="gap-2" onClick={() => document.getElementById('section-quantitative')?.scrollIntoView({ behavior: 'smooth' })}>
-                    <Activity className="w-4 h-4" /> 정량 검진 결과
-                </Button>
-                <Button variant="secondary" size="sm" className="gap-2" onClick={() => document.getElementById('section-pre-diagnosis')?.scrollIntoView({ behavior: 'smooth' })}>
-                    <ClipboardList className="w-4 h-4" /> 문진 뷰어
-                </Button>
-                <Button variant="secondary" size="sm" className="gap-2" onClick={() => document.getElementById('section-imaging')?.scrollIntoView({ behavior: 'smooth' })}>
-                    <ImageIcon className="w-4 h-4" /> 영상 및 소견
-                </Button>
-                <Button variant="secondary" size="sm" className="gap-2" onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth' })}>
-                    <FileText className="w-4 h-4" /> 문서(PDF)
-                </Button>
-            </div>
         </div>
     );
 }
