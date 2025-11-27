@@ -4,24 +4,28 @@ import { subDays, subMonths, format } from "date-fns";
 export const mockPatient = {
     animalNumber: "10000001",
     name: "초코",
+    species: "개 (Canine)", // Added species
     owner: "김철수",
     phone: "010-1234-5678",
     primaryVet: "김철수",
     breed: "말티즈 (Maltese)",
     gender: "Male (Castrated)",
     age: "8Y 3M",
+    birthDate: "2016-02-15",
     weight: "3.5kg",
     weightTrend: -0.1,
     heartRate: 110,
     tags: ["주의 환자"],
     majorDiseases: ["슬개골 탈구", "피부염"],
     visitHistory: [
-        { date: "2024-10-15", reason: "정기 건강검진" },
-        { date: "2024-05-20", reason: "피부 발진" },
-        { date: "2023-11-10", reason: "예방접종" },
+        { date: "2024-05-19", reason: "정기 건강검진" },
+        { date: "2024-04-15", reason: "내과 진료" },
+        { date: "2024-03-10", reason: "예방접종" },
+        { date: "2024-01-05", reason: "초진" },
     ],
     chiefComplaint: "식욕 부진 및 기력 저하",
     diagnosis: "승모판 폐쇄부전증 (MMVD) 의심",
+    registrationDate: "2024-01-05", // First visit date
 };
 
 // 2. Integrated Test Results (Quantitative)
@@ -234,22 +238,22 @@ export const mockDocuments = [
     {
         id: "doc-1",
         name: "핑핑 검진결과서.pdf",
-        date: "2024-05-21",
+        date: "2024-05-25",
         type: "검진결과",
         path: "/documents/핑핑 검진결과서.pdf"
     },
     {
         id: "doc-2",
         name: "핑핑 사전문진표.pdf",
-        date: "2024-05-21",
+        date: "2024-05-19",
         type: "문진표",
         path: "/documents/핑핑 사전문진표.pdf"
     },
     {
         id: "doc-3",
-        name: "핑핑_문진결과.pdf",
-        date: "2024-05-19",
-        type: "문진결과",
+        name: "핑핑 외부의뢰 (그린벳).pdf",
+        date: "2024-05-21",
+        type: "외부의뢰",
         path: "/documents/핑핑_문진결과.pdf"
     },
     {
@@ -288,55 +292,105 @@ export const mockAdminData = {
 
 
 // 8. Visit Timeline Data
-export const mockVisitTimeline = [
-    {
-        date: "2024-05-21",
-        title: "정기 검진",
-        status: "completed", // completed, scheduled
-        hasLab: true,
-        hasImaging: false,
-        hasDocument: true,
-        hasQuestionnaire: true,
-        description: "정기 건강검진 및 예방접종",
-    },
+export interface VisitTimelineItem {
+    date: string;
+    title: string;
+    status: "completed" | "scheduled";
+    description: string;
+    dataAvailable: {
+        type: "questionnaire" | "lab" | "imaging" | "document" | "referral" | "report";
+        date: string;
+        label: string;
+        documentId?: string; // For linking to specific documents
+    }[];
+}
+
+export const mockVisitTimeline: VisitTimelineItem[] = [
     {
         date: "2024-05-19",
-        title: "피부과 진료",
+        title: "정기 검진 방문",
         status: "completed",
-        hasLab: true,
-        hasImaging: false,
-        hasDocument: true,
-        hasQuestionnaire: true,
-        description: "피부 발진 및 소양감 호소",
+        description: "정기 건강검진 및 검사 진행",
+        dataAvailable: [
+            {
+                type: "questionnaire",
+                date: "2024-05-19",
+                label: "사전문진표",
+                documentId: "doc-2"
+            },
+            {
+                type: "lab",
+                date: "2024-05-20",
+                label: "혈액검사 결과"
+            },
+            {
+                type: "referral",
+                date: "2024-05-21",
+                label: "외부 진료결과 (그린벳)",
+                documentId: "doc-3"
+            },
+            {
+                type: "imaging",
+                date: "2024-05-22",
+                label: "영상 및 소견"
+            },
+            {
+                type: "report",
+                date: "2024-05-25",
+                label: "검진결과서",
+                documentId: "doc-1"
+            }
+        ]
     },
     {
         date: "2024-04-15",
         title: "내과 진료",
         status: "completed",
-        hasLab: true,
-        hasImaging: true,
-        hasDocument: false,
-        hasQuestionnaire: false,
         description: "구토 및 설사 증상",
+        dataAvailable: [
+            {
+                type: "lab",
+                date: "2024-04-15",
+                label: "혈액검사"
+            },
+            {
+                type: "imaging",
+                date: "2024-04-15",
+                label: "복부 초음파"
+            }
+        ]
     },
     {
         date: "2024-03-10",
         title: "예방접종",
         status: "completed",
-        hasLab: false,
-        hasImaging: false,
-        hasDocument: true,
-        hasQuestionnaire: false,
         description: "종합백신 5차",
+        dataAvailable: [
+            {
+                type: "document",
+                date: "2024-03-10",
+                label: "접종 기록",
+                documentId: "doc-6"
+            }
+        ]
     },
     {
         date: "2024-01-05",
         title: "초진",
         status: "completed",
-        hasLab: true,
-        hasImaging: true,
-        hasDocument: true,
         description: "기초 건강검진",
+        dataAvailable: [
+            {
+                type: "lab",
+                date: "2024-01-05",
+                label: "기초 혈액검사"
+            },
+            {
+                type: "imaging",
+                date: "2024-01-05",
+                label: "기본 X-ray"
+            }
+        ]
     },
 ];
 

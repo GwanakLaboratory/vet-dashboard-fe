@@ -17,7 +17,7 @@ export function QuantitativeResults() {
     return (
         <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">정량 검진 결과</CardTitle>
+                <CardTitle className="text-lg">검진 결과</CardTitle>
                 <div className="flex gap-2">
                     <Button
                         variant={showOnlyAbnormal ? "secondary" : "outline"}

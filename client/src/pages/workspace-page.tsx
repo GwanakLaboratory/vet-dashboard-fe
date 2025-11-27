@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, FileText, Plus, User, ChevronDown, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { PatientRegistration } from "@/components/workspace/patient-registration";
 import { VisitDataEntry } from "@/components/workspace/visit-data-entry";
 import { VisitTimeline } from "@/components/workspace/visit-timeline";
@@ -35,7 +35,7 @@ export default function WorkspacePage() {
 
         const sections = [
             "section-registration", "section-data-entry", "section-calendar",
-            "section-overview", "section-quantitative", "section-pre-diagnosis",
+            "section-overview", "section-quantitative", "section-trend-chart",
             "section-imaging", "section-documents"
         ];
 
@@ -47,23 +47,9 @@ export default function WorkspacePage() {
         return () => observer.disconnect();
     }, []);
 
-    const handleQuickAction = (action: string) => {
-        toast({
-            title: action,
-            description: `${action} 기능이 실행되었습니다.`,
-        });
-    };
-
     const handleNavigateToDocument = (docId: string) => {
         setSelectedDocId(docId);
         const el = document.getElementById("section-documents");
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-
-    const handleNavigateToQuestionnaire = () => {
-        const el = document.getElementById("section-pre-diagnosis");
         if (el) {
             el.scrollIntoView({ behavior: 'smooth' });
         }
@@ -97,22 +83,6 @@ export default function WorkspacePage() {
                                 className="h-9 pl-8 w-full md:w-[300px]"
                             />
                         </div>
-                        <Button size="sm" className="h-9 gap-1" onClick={() => setIsRegistrationOpen(true)}>
-                            <Plus className="h-3.5 w-3.5" />
-                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                신규 등록
-                            </span>
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleQuickAction("달력 보기")}>
-                            <Calendar className="h-4 w-4" />
-                            <span className="sr-only">달력 보기</span>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleQuickAction("파일 뷰")}>
-                            <FileText className="h-4 w-4" />
-                            <span className="sr-only">파일 뷰</span>
-                        </Button>
                     </div>
                 </div>
             </header>
@@ -120,51 +90,42 @@ export default function WorkspacePage() {
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-6 space-y-12 scroll-smooth">
 
-
                 {/* Section D: Overview */}
-                <section id="section-overview" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">개체 Overview</h2>
+                <section id="section-overview" className="scroll-mt-20">
                     <PatientOverview />
                 </section>
 
                 {/* Section C: Calendar */}
-                <section id="section-calendar" className="space-y-4 scroll-mt-20">
+                <section id="section-calendar" className="scroll-mt-20">
                     <VisitTimeline
                         onNavigateToDocument={handleNavigateToDocument}
-                        onNavigateToQuestionnaire={handleNavigateToQuestionnaire}
                         onNavigateToLab={handleNavigateToLab}
                         onNavigateToImaging={handleNavigateToImaging}
                     />
                 </section>
 
                 {/* Section E: Quantitative Results */}
-                <section id="section-quantitative" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">정량 검진 결과</h2>
-                    <div className="space-y-6">
-                        <QuantitativeResults />
-                        <TrendChart />
-                    </div>
+                <section id="section-quantitative" className="space-y-6 scroll-mt-20">
+                    <QuantitativeResults />
                 </section>
 
-                {/* Section F: Pre-diagnosis (Removed) */}
-                {/* <section id="section-pre-diagnosis" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">문진 뷰어</h2>
-                    <PreDiagnosisViewer />
-                </section> */}
+                {/* Section E: Trend Chart */}
+                <section id="section-trend-chart" className="space-y-6 scroll-mt-20">
+                    <TrendChart />
+                </section>
 
                 {/* Section G: Imaging */}
-                <section id="section-imaging" className="space-y-4 scroll-mt-20">
+                <section id="section-imaging" className="scroll-mt-20">
                     <ImagingViewer />
                 </section>
 
                 {/* Section H: Documents */}
-                <section id="section-documents" className="space-y-4 scroll-mt-20">
-                    <h2 className="text-xl font-semibold">문서(PDF) 뷰</h2>
+                <section id="section-documents" className="scroll-mt-20">
                     <DocumentViewer selectedDocId={selectedDocId} />
                 </section>
 
-                {/* Section A: Registration (Collapsible) */}
-                <section id="section-registration" className="scroll-mt-20">
+                {/* Section A: Registration (Collapsible) - HIDDEN */}
+                {/* <section id="section-registration" className="scroll-mt-20">
                     <Collapsible open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen} className="border rounded-lg bg-card">
                         <div className="flex items-center justify-between p-4">
                             <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -181,10 +142,10 @@ export default function WorkspacePage() {
                             <PatientRegistration />
                         </CollapsibleContent>
                     </Collapsible>
-                </section>
+                </section> */}
 
-                {/* Section B: Data Entry (Collapsible) */}
-                <section id="section-data-entry" className="scroll-mt-20">
+                {/* Section B: Data Entry (Collapsible) - HIDDEN */}
+                {/* <section id="section-data-entry" className="scroll-mt-20">
                     <Collapsible open={isDataEntryOpen} onOpenChange={setIsDataEntryOpen} className="border rounded-lg bg-card">
                         <div className="flex items-center justify-between p-4">
                             <h2 className="text-xl font-semibold">데이터 추가</h2>
@@ -199,7 +160,7 @@ export default function WorkspacePage() {
                             <VisitDataEntry />
                         </CollapsibleContent>
                     </Collapsible>
-                </section>
+                </section> */}
             </main>
         </div>
     );
