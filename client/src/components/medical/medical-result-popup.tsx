@@ -15,14 +15,16 @@ interface MedicalResultPopupProps {
     columnKey: string;
     value: string | number;
     referenceRange?: { min: number; max: number };
+    description?: string;
+    testName?: string;
     children: React.ReactNode;
 }
 
-export function MedicalResultPopup({ columnKey, value, referenceRange, children }: MedicalResultPopupProps) {
+export function MedicalResultPopup({ columnKey, value, referenceRange, description, testName, children }: MedicalResultPopupProps) {
     const info = medicalKnowledgeBase[columnKey];
 
-    // If no medical info is found, just render the children without popup
-    if (!info) {
+    // If no medical info is found and no description provided, just render the children without popup
+    if (!info && !description) {
         return <>{children}</>;
     }
 
@@ -58,13 +60,13 @@ export function MedicalResultPopup({ columnKey, value, referenceRange, children 
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        {info.name}
+                        {info?.name || testName || columnKey}
                         <Badge variant={status === 'Normal' ? 'outline' : 'destructive'} className={status === 'Low' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200' : ''}>
                             {status}
                         </Badge>
                     </DialogTitle>
                     <DialogDescription>
-                        {info.description}
+                        {description || info?.description}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -100,17 +102,19 @@ export function MedicalResultPopup({ columnKey, value, referenceRange, children 
 
                     <Separator />
 
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                            <Info className="w-4 h-4 text-primary" />
-                            임상적 소견
+                    {info?.interpretation && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-semibold">
+                                <Info className="w-4 h-4 text-primary" />
+                                임상적 소견
+                            </div>
+                            <div className="text-sm bg-primary/5 p-3 rounded-md border border-primary/10">
+                                {status === 'High' ? info.interpretation.high :
+                                    status === 'Low' ? info.interpretation.low :
+                                        info.interpretation.normal}
+                            </div>
                         </div>
-                        <div className="text-sm bg-primary/5 p-3 rounded-md border border-primary/10">
-                            {status === 'High' ? info.interpretation.high :
-                                status === 'Low' ? info.interpretation.low :
-                                    info.interpretation.normal}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

@@ -8,53 +8,32 @@ import {
     Table as TableIcon,
     Download,
     Sparkles,
-    PieChart,
-    LineChart,
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    Users,
-    Activity,
     AlertCircle,
-    FileText
 } from "lucide-react";
 import { ResearchAgentInterface } from "@/components/research/research-agent-interface";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    PieChart as RePieChart,
-    Pie,
-    Cell,
-    LineChart as ReLineChart,
-    Line,
-} from "recharts";
 import { mockResearchData, columnDefinitions } from "@/lib/mock-dashboard-data";
 import { DataTableFilter, FilterType } from "./data-table-filter";
 import { ColumnSelector } from "./column-selector";
 import { MedicalResultPopup } from "@/components/medical/medical-result-popup";
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+import { ChartBuilder } from "./chart-builder";
 
 type SortConfig = { key: string; direction: 'asc' | 'desc' } | null;
 
 export function ResearchDashboard() {
-    const [chartType, setChartType] = useState("bar");
     const [sortConfig, setSortConfig] = useState<SortConfig>(null);
     const [filters, setFilters] = useState<Record<string, any>>({});
 
-    // Default selected columns: General group + key Chemistry
+    // Default selected columns: General group + key biomarkers
     const [selectedColumnKeys, setSelectedColumnKeys] = useState<string[]>([
-        'id', 'name', 'breed', 'age', 'gender', 'weight', 'diagnosis', 'lastVisit',
-        'ast', 'bun', 'creatinine'
+        'id', 'name', 'breed', 'age', 'gender', 'weight', 'diagnosis', 'diseaseStage', 'lastVisit',
+        'abnormalTestCount', 'criticalFlags',
+        'CM001', 'BC009', 'BC007', 'BC001', 'BC008' // NT-proBNP, Creatinine, SDMA, ALT, BUN
     ]);
 
-    const { ageDistribution, diagnosisTrend, breedDistribution, patients } = mockResearchData;
+    const { patients } = mockResearchData;
 
     // Filter columns based on selection
     const visibleColumns = useMemo(() => {
@@ -139,6 +118,10 @@ export function ResearchDashboard() {
                         : Number(bValue) - Number(aValue);
                 }
 
+                if (aValue === bValue) return 0;
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+
                 if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
                 return 0;
@@ -215,13 +198,18 @@ export function ResearchDashboard() {
             if (numValue < min) {
                 colorClass = "text-blue-600 font-medium";
                 statusIndicator = <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" title="Low" />;
-            } else if (numValue > max) {
                 colorClass = "text-red-600 font-medium";
                 statusIndicator = <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1" title="High" />;
             }
 
             return (
-                <MedicalResultPopup columnKey={col.key} value={value} referenceRange={col.referenceRange}>
+                <MedicalResultPopup
+                    columnKey={col.key}
+                    value={value}
+                    referenceRange={col.referenceRange}
+                    description={(col as any).description}
+                    testName={col.label}
+                >
                     <div className="flex items-center cursor-pointer">
                         {statusIndicator}
                         <span className={`${colorClass} hover:underline`}>{value}</span>
@@ -251,6 +239,47 @@ export function ResearchDashboard() {
             );
         }
 
+        // Critical Flags Indicator
+        if (col.key === 'criticalFlags') {
+            return value ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    위험
+                </span>
+            ) : (
+                <span className="text-muted-foreground text-xs">-</span>
+            );
+        }
+
+        // Abnormal Test Count
+        if (col.key === 'abnormalTestCount') {
+            const count = Number(value);
+            let colorClass = 'text-green-600';
+            if (count > 5) colorClass = 'text-red-600 font-bold';
+            else if (count > 2) colorClass = 'text-orange-600 font-medium';
+            else if (count > 0) colorClass = 'text-yellow-600';
+
+            return <span className={colorClass}>{count}</span>;
+        }
+
+        // Disease Stage
+        if (col.key === 'diseaseStage') {
+            if (!value) return <span className="text-muted-foreground text-xs">-</span>;
+
+            let colorClass = 'bg-blue-100 text-blue-800';
+            if (String(value).includes('Stage 3') || String(value).includes('B2') || String(value).includes('Grade 3')) {
+                colorClass = 'bg-red-100 text-red-800';
+            } else if (String(value).includes('Stage 2') || String(value).includes('Grade 2')) {
+                colorClass = 'bg-orange-100 text-orange-800';
+            }
+
+            return (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+                    {value}
+                </span>
+            );
+        }
+
         return <span>{value}</span>;
     };
 
@@ -259,130 +288,15 @@ export function ResearchDashboard() {
             <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between">
                     <TabsList>
-                        <TabsTrigger value="overview">개요</TabsTrigger>
+                        <TabsTrigger value="overview">데이터 탐색기</TabsTrigger>
                         <TabsTrigger value="patients">환자 목록</TabsTrigger>
                         <TabsTrigger value="ai">AI 분석</TabsTrigger>
                     </TabsList>
                 </div>
 
-                {/* Tab 1: Overview */}
+                {/* Tab 1: Overview (Interactive Data Explorer) */}
                 <TabsContent value="overview" className="flex-1 overflow-y-auto mt-4 space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">총 환자 수</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{patients.length}</div>
-                                <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">평균 연령</CardTitle>
-                                <Activity className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    {(patients.reduce((acc, curr) => acc + curr.age, 0) / patients.length).toFixed(1)}세
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">주요 질환</CardTitle>
-                                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">MMVD</div>
-                                <p className="text-xs text-muted-foreground">전체 환자의 32%</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">진행중인 연구</CardTitle>
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">3</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                        <Card className="col-span-4">
-                            <CardHeader>
-                                <CardTitle>월별 진단 추세</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pl-2">
-                                <ResponsiveContainer width="100%" height={350}>
-                                    <ReLineChart data={diagnosisTrend}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="month" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Line type="monotone" dataKey="mmvd" stroke="#8884d8" name="MMVD" />
-                                        <Line type="monotone" dataKey="patella" stroke="#82ca9d" name="슬개골 탈구" />
-                                        <Line type="monotone" dataKey="ckd" stroke="#ff7300" name="신부전" />
-                                    </ReLineChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                        <Card className="col-span-3">
-                            <CardHeader>
-                                <CardTitle>환자 분포</CardTitle>
-                                <CardDescription>연령별 / 품종별 분포</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex-1 w-full min-h-0">
-                                    <ResponsiveContainer width="100%" height={350}>
-                                        {chartType === "bar" ? (
-                                            <BarChart data={breedDistribution}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="name" />
-                                                <YAxis />
-                                                <Tooltip />
-                                                <Legend />
-                                                <Bar dataKey="count" fill="#8884d8" name="환자 수" />
-                                            </BarChart>
-                                        ) : chartType === "pie" ? (
-                                            <RePieChart>
-                                                <Pie
-                                                    data={ageDistribution}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                    outerRadius={120}
-                                                    fill="#8884d8"
-                                                    dataKey="value"
-                                                >
-                                                    {ageDistribution.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip />
-                                                <Legend />
-                                            </RePieChart>
-                                        ) : (
-                                            <ReLineChart data={diagnosisTrend}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="month" />
-                                                <YAxis />
-                                                <Tooltip />
-                                                <Legend />
-                                                <Line type="monotone" dataKey="mmvd" stroke="#8884d8" name="MMVD" />
-                                                <Line type="monotone" dataKey="patella" stroke="#82ca9d" name="슬개골 탈구" />
-                                                <Line type="monotone" dataKey="ckd" stroke="#ff7300" name="신부전" />
-                                            </ReLineChart>
-                                        )}
-                                    </ResponsiveContainer>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <ChartBuilder data={patients} columnDefinitions={columnDefinitions} />
                 </TabsContent>
 
                 {/* Tab 2: Patient List (Data Table) */}
