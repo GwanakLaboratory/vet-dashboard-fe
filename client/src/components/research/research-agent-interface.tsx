@@ -168,27 +168,29 @@ export function ResearchAgentInterface() {
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="p-4 border-t bg-background">
-                <div className="max-w-3xl mx-auto relative flex">
-                    <Input
-                        placeholder="질문이나 분석 요청을 입력하세요..."
-                        className="pr-12 h-12 text-base shadow-sm"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    />
-                    <Button
-                        size="icon"
-                        className="absolute right-1 top-1 h-10 w-10"
-                        onClick={handleSend}
-                        disabled={isLoading || !prompt.trim()}
-                    >
-                        <Send className="w-4 h-4" />
-                    </Button>
+            <div className="p-4 bg-background">
+                <div className="max-w-3xl mx-auto relative">
+                    <div className="relative flex items-center w-full p-1 rounded-full bg-muted/20 border border-transparent focus-within:border-primary shadow-sm transition-colors">
+                        <Input
+                            placeholder="질문이나 분석 요청을 입력하세요"
+                            className="flex-1 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent px-4 h-12 text-base"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                        />
+                        <Button
+                            size="icon"
+                            className="h-10 w-10 rounded-full mr-1 shrink-0"
+                            onClick={handleSend}
+                            disabled={isLoading || !prompt.trim()}
+                        >
+                            <Send className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <p className="text-center text-xs text-muted-foreground mt-3">
+                        AI가 자연어 질문을 이해하고 데이터베이스에서 적절한 결과를 추출합니다.
+                    </p>
                 </div>
-                <p className="text-center text-xs text-muted-foreground mt-2">
-                    AI가 자연어 질문을 이해하고 데이터베이스에서 적절한 결과를 추출합니다.
-                </p>
             </div>
         </div>
     );

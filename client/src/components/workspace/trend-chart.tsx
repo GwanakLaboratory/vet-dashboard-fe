@@ -132,7 +132,13 @@ export function TrendChart() {
                                     mode="range"
                                     defaultMonth={dateRange?.from}
                                     selected={dateRange}
-                                    onSelect={setDateRange}
+                                    onSelect={(range) => {
+                                        if (range?.from) {
+                                            setDateRange({ from: range.from, to: range.to || range.from });
+                                        } else {
+                                            setDateRange(undefined);
+                                        }
+                                    }}
                                     numberOfMonths={2}
                                 />
                             </PopoverContent>
@@ -195,22 +201,10 @@ export function TrendChart() {
                     </div>
 
                     {/* Chart Area */}
-                    <div className="flex-1 min-h-[400px] border rounded-lg p-4 bg-slate-50/50">
+                    <div className="flex-1 min-h-[400px] border rounded-lg p-4 bg-slate-50/50 flex flex-col justify-center">
                         {selectedItemIds.length > 0 ? (
                             <div className="h-full w-full">
-                                <div className="mb-4">
-                                    <h3 className="text-lg font-bold flex flex-wrap gap-2">
-                                        {selectedItemIds.map((id, idx) => {
-                                            const item = mockTestResults.find(i => i.id === id);
-                                            return (
-                                                <span key={id} style={{ color: colors[idx % colors.length] }}>
-                                                    {item?.name}
-                                                </span>
-                                            );
-                                        })}
-                                    </h3>
-                                </div>
-                                <ResponsiveContainer width="100%" height={350}>
+                                <ResponsiveContainer width="100%" height={350} >
                                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                         <XAxis dataKey="date" />
