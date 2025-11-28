@@ -85,8 +85,8 @@ export function ResearchAgentInterface() {
                             <div className={`max-w-[80%] space-y-2`}>
                                 {/* Text Bubble */}
                                 <div className={`p-3 rounded-lg text-sm ${msg.role === "user"
-                                        ? "bg-primary text-primary-foreground"
-                                        : "bg-card border shadow-sm"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-card border shadow-sm"
                                     }`}>
                                     {msg.content}
                                 </div>
@@ -169,7 +169,7 @@ export function ResearchAgentInterface() {
 
             {/* Input Area */}
             <div className="p-4 border-t bg-background">
-                <div className="max-w-3xl mx-auto relative">
+                <div className="max-w-3xl mx-auto relative flex">
                     <Input
                         placeholder="질문이나 분석 요청을 입력하세요..."
                         className="pr-12 h-12 text-base shadow-sm"

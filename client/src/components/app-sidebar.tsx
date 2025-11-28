@@ -12,6 +12,9 @@ import {
   FileText,
   GitGraph,
   GitGraphIcon,
+  PieChart,
+  Database,
+  Bot,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -44,6 +47,12 @@ const workspaceSubItems = [
   { title: "문서(PDF) 뷰", id: "section-documents", icon: FileText },
   // { title: "신규 등록", id: "section-registration", icon: UserPlus },
   // { title: "데이터 추가", id: "section-data-entry", icon: FileInput },
+];
+
+const researchSubItems = [
+  { title: "데이터 시각화", id: "section-visualization", icon: PieChart },
+  { title: "환자 데이터베이스", id: "section-database", icon: Database },
+  { title: "AI 분석", id: "section-ai", icon: Bot },
 ];
 
 export function AppSidebar() {
@@ -113,6 +122,24 @@ export function AppSidebar() {
                     {item.url === "/workspace" && isActive && (
                       <SidebarMenuSub>
                         {workspaceSubItems.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton
+                              onClick={() => handleScrollToSection(subItem.id)}
+                              isActive={activeSection === subItem.id}
+                              className="cursor-pointer transition-colors"
+                            >
+                              <subItem.icon className="w-3 h-3 mr-2" />
+                              <span>{subItem.title}</span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
+
+                    {/* Sub-navigation for Research */}
+                    {item.url === "/research" && isActive && (
+                      <SidebarMenuSub>
+                        {researchSubItems.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
                               onClick={() => handleScrollToSection(subItem.id)}

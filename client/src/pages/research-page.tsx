@@ -1,8 +1,34 @@
 import { FlaskConical, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResearchDashboard } from "@/components/research/research-dashboard";
+import { useEffect } from "react";
 
 export default function ResearchPage() {
+    // Scroll Spy Logic: Dispatch custom event for Sidebar to listen
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        window.dispatchEvent(new CustomEvent('workspace-scroll', { detail: entry.target.id }));
+                    }
+                });
+            },
+            { rootMargin: "-100px 0px -70% 0px" }
+        );
+
+        const sections = [
+            "section-visualization", "section-database", "section-ai"
+        ];
+
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
+
+        return () => observer.disconnect();
+    }, []);
+
     return (
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
@@ -21,7 +47,7 @@ export default function ResearchPage() {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-hidden p-4 bg-muted/10">
+            <main className="flex-1 overflow-y-auto p-4 bg-muted/10 scroll-smooth">
                 <ResearchDashboard />
             </main>
         </div>

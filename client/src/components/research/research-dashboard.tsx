@@ -284,70 +284,80 @@ export function ResearchDashboard() {
     };
 
     return (
-        <div className="flex flex-col h-full space-y-4">
-            <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+        <div className="flex flex-col h-full space-y-12">
+            {/* Section 1: Data Visualization (formerly Overview) */}
+            <section id="section-visualization" className="scroll-mt-20 space-y-4">
                 <div className="flex items-center justify-between">
-                    <TabsList>
-                        <TabsTrigger value="overview">데이터 탐색기</TabsTrigger>
-                        <TabsTrigger value="patients">환자 목록</TabsTrigger>
-                        <TabsTrigger value="ai">AI 분석</TabsTrigger>
-                    </TabsList>
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <BarChart2 className="w-5 h-5" />
+                        데이터 시각화
+                    </h2>
                 </div>
+                <ChartBuilder data={patients} columnDefinitions={columnDefinitions} />
+            </section>
 
-                {/* Tab 1: Overview (Interactive Data Explorer) */}
-                <TabsContent value="overview" className="flex-1 overflow-y-auto mt-4 space-y-4">
-                    <ChartBuilder data={patients} columnDefinitions={columnDefinitions} />
-                </TabsContent>
-
-                {/* Tab 2: Patient List (Data Table) */}
-                <TabsContent value="patients" className="flex-1 overflow-hidden mt-0 border rounded-lg bg-card">
-                    <div className="flex flex-col h-full">
-                        <div className="p-4 border-b flex items-center justify-between">
-                            <h3 className="font-semibold">환자 데이터베이스</h3>
-                            <div className="flex items-center gap-2">
-                                <ColumnSelector
-                                    columns={columnDefinitions}
-                                    selectedColumns={selectedColumnKeys}
-                                    onSelectionChange={setSelectedColumnKeys}
-                                />
-                                <Button variant="outline" size="sm">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    내보내기
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="flex-1 w-full min-h-0 overflow-auto">
-                            <Table>
-                                <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
-                                    <TableRow>
-                                        {visibleColumns.map(renderHeader)}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {processedData.map((patient) => (
-                                        <TableRow key={patient.id}>
-                                            {visibleColumns.map((col) => (
-                                                <TableCell
-                                                    key={col.key}
-                                                    className={`${col.key === 'id' || col.key === 'name' ? 'sticky left-0 z-10 bg-background/95 shadow-[1px_0_0_0_rgba(0,0,0,0.1)]' : ''}`}
-                                                    style={col.key === 'name' ? { left: '80px' } : col.key === 'id' ? { left: 0 } : undefined}
-                                                >
-                                                    {renderCell(patient, col)}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+            {/* Section 2: Patient Database (formerly Patient List) */}
+            <section id="section-database" className="scroll-mt-20 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <TableIcon className="w-5 h-5" />
+                        환자 데이터베이스
+                    </h2>
+                </div>
+                <div className="border rounded-lg bg-card flex flex-col h-[600px]">
+                    <div className="p-4 border-b flex items-center justify-between">
+                        <h3 className="font-semibold">전체 환자 목록</h3>
+                        <div className="flex items-center gap-2">
+                            <ColumnSelector
+                                columns={columnDefinitions}
+                                selectedColumns={selectedColumnKeys}
+                                onSelectionChange={setSelectedColumnKeys}
+                            />
+                            <Button variant="outline" size="sm">
+                                <Download className="mr-2 h-4 w-4" />
+                                내보내기
+                            </Button>
                         </div>
                     </div>
-                </TabsContent>
+                    <div className="flex-1 w-full min-h-0 overflow-auto">
+                        <Table>
+                            <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+                                <TableRow>
+                                    {visibleColumns.map(renderHeader)}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {processedData.map((patient) => (
+                                    <TableRow key={patient.id}>
+                                        {visibleColumns.map((col) => (
+                                            <TableCell
+                                                key={col.key}
+                                                className={`${col.key === 'id' || col.key === 'name' ? 'sticky left-0 z-10 bg-background/95 shadow-[1px_0_0_0_rgba(0,0,0,0.1)]' : ''}`}
+                                                style={col.key === 'name' ? { left: '80px' } : col.key === 'id' ? { left: 0 } : undefined}
+                                            >
+                                                {renderCell(patient, col)}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            </section>
 
-                {/* Tab 3: AI Analysis */}
-                <TabsContent value="ai" className="flex-1 overflow-hidden mt-0 border rounded-lg bg-card">
+            {/* Section 3: AI Analysis */}
+            <section id="section-ai" className="scroll-mt-20 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <Sparkles className="w-5 h-5" />
+                        AI 분석
+                    </h2>
+                </div>
+                <div className="border rounded-lg bg-card overflow-hidden h-[600px]">
                     <ResearchAgentInterface />
-                </TabsContent>
-            </Tabs>
+                </div>
+            </section>
         </div>
     );
 }
