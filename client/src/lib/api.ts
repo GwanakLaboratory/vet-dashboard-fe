@@ -1,6 +1,6 @@
 /**
- * 중앙화된 API 클라이언트
- * 타입 안전한 API 호출을 제공합니다.
+ * Mock API Client
+ * Returns mock data for frontend-only development.
  */
 
 import type {
@@ -22,8 +22,6 @@ import type {
     InsertMedication,
 } from '@shared/schema';
 
-const API_BASE_URL = '/api';
-
 /**
  * API 에러 클래스
  */
@@ -38,68 +36,127 @@ export class ApiError extends Error {
     }
 }
 
-/**
- * HTTP 요청 헬퍼
- */
-async function fetchApi<T>(
-    endpoint: string,
-    options?: RequestInit,
-): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options?.headers,
-            },
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new ApiError(
-                response.status,
-                response.statusText,
-                errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-            );
-        }
-
-        return response.json();
-    } catch (error) {
-        if (error instanceof ApiError) {
-            throw error;
-        }
-        throw new Error(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+// Mock Data Store
+let patients: Patient[] = [
+    {
+        id: '1',
+        animalNumber: 'A001',
+        name: '뽀삐',
+        ownerName: '김철수',
+        species: '개',
+        breed: '푸들',
+        gender: '수컷',
+        birthDate: '2020-01-15',
+        registrationDate: '2025-11-20',
+        neutered: true,
+        weight: 5.5,
+        microchipNumber: '1234567890',
+    },
+    {
+        id: '2',
+        animalNumber: 'A002',
+        name: '나비',
+        ownerName: '이영희',
+        species: '고양이',
+        breed: '코숏',
+        gender: '암컷',
+        birthDate: '2021-03-10',
+        registrationDate: '2025-11-21',
+        neutered: true,
+        weight: 4.2,
+        microchipNumber: '0987654321',
     }
-}
+];
+
+let visits: Visit[] = [
+    {
+        id: '1',
+        animalNumber: 'A001',
+        visitDate: '2025-11-25',
+        visitType: '정기검진',
+        chiefComplaint: '식욕 부진',
+        diagnosis: '가벼운 위염',
+        treatment: '약물 처방',
+        status: '완료',
+        veterinarian: '김수의',
+        notes: '특이사항 없음',
+    }
+];
+
+let testResults: TestResult[] = [];
+let examMaster: ExamMaster[] = [
+    {
+        id: '1',
+        examCode: 'CBC001',
+        examName: 'RBC',
+        examCategory: 'CBC',
+        examType: '일반',
+        unit: 'M/uL',
+        normalRangeMin: 5.5,
+        normalRangeMax: 8.5,
+        isQuantitative: true,
+    },
+    {
+        id: '2',
+        examCode: 'CBC002',
+        examName: 'WBC',
+        examCategory: 'CBC',
+        examType: '일반',
+        unit: 'K/uL',
+        normalRangeMin: 6.0,
+        normalRangeMax: 17.0,
+        isQuantitative: true,
+    }
+];
+
+let questionnaireResponses: QuestionnaireResponse[] = [];
+let userFilters: UserFilter[] = [];
+let clusters: ClusterAnalysis[] = [];
+let medications: Medication[] = [];
+
+// Helper to simulate async delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ========================================
 // Patients API
 // ========================================
 
 export const patientsApi = {
-    getAll: () => fetchApi<Patient[]>('/patients'),
+    getAll: async () => {
+        await delay(500);
+        return [...patients];
+    },
 
-    getByAnimalNumber: (animalNumber: string) =>
-        fetchApi<Patient>(`/patients/${animalNumber}`),
+    getByAnimalNumber: async (animalNumber: string) => {
+        await delay(300);
+        const patient = patients.find(p => p.animalNumber === animalNumber);
+        if (!patient) throw new Error('Patient not found');
+        return patient;
+    },
 
-    create: (data: InsertPatient) =>
-        fetchApi<Patient>('/patients', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertPatient) => {
+        await delay(500);
+        const newPatient: Patient = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        patients.push(newPatient);
+        return newPatient;
+    },
 
-    update: (id: string, data: Partial<InsertPatient>) =>
-        fetchApi<Patient>(`/patients/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+    update: async (id: string, data: Partial<InsertPatient>) => {
+        await delay(500);
+        const index = patients.findIndex(p => p.id === id);
+        if (index === -1) throw new Error('Patient not found');
+        patients[index] = { ...patients[index], ...data };
+        return patients[index];
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/patients/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        patients = patients.filter(p => p.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -107,29 +164,46 @@ export const patientsApi = {
 // ========================================
 
 export const visitsApi = {
-    getAll: () => fetchApi<Visit[]>('/visits'),
+    getAll: async () => {
+        await delay(500);
+        return [...visits];
+    },
 
-    getById: (id: string) => fetchApi<Visit>(`/visits/${id}`),
+    getById: async (id: string) => {
+        await delay(300);
+        const visit = visits.find(v => v.id === id);
+        if (!visit) throw new Error('Visit not found');
+        return visit;
+    },
 
-    getByAnimalNumber: (animalNumber: string) =>
-        fetchApi<Visit[]>(`/visits/animal/${animalNumber}`),
+    getByAnimalNumber: async (animalNumber: string) => {
+        await delay(300);
+        return visits.filter(v => v.animalNumber === animalNumber);
+    },
 
-    create: (data: InsertVisit) =>
-        fetchApi<Visit>('/visits', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertVisit) => {
+        await delay(500);
+        const newVisit: Visit = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        visits.push(newVisit);
+        return newVisit;
+    },
 
-    update: (id: string, data: Partial<InsertVisit>) =>
-        fetchApi<Visit>(`/visits/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+    update: async (id: string, data: Partial<InsertVisit>) => {
+        await delay(500);
+        const index = visits.findIndex(v => v.id === id);
+        if (index === -1) throw new Error('Visit not found');
+        visits[index] = { ...visits[index], ...data };
+        return visits[index];
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/visits/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        visits = visits.filter(v => v.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -137,29 +211,46 @@ export const visitsApi = {
 // ========================================
 
 export const testResultsApi = {
-    getAll: () => fetchApi<TestResult[]>('/test-results'),
+    getAll: async () => {
+        await delay(500);
+        return [...testResults];
+    },
 
-    getById: (id: string) => fetchApi<TestResult>(`/test-results/${id}`),
+    getById: async (id: string) => {
+        await delay(300);
+        const result = testResults.find(r => r.id === id);
+        if (!result) throw new Error('Test result not found');
+        return result;
+    },
 
-    getByAnimalNumber: (animalNumber: string) =>
-        fetchApi<TestResult[]>(`/test-results/animal/${animalNumber}`),
+    getByAnimalNumber: async (animalNumber: string) => {
+        await delay(300);
+        return testResults.filter(r => r.animalNumber === animalNumber);
+    },
 
-    create: (data: InsertTestResult) =>
-        fetchApi<TestResult>('/test-results', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertTestResult) => {
+        await delay(500);
+        const newResult: TestResult = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        testResults.push(newResult);
+        return newResult;
+    },
 
-    update: (id: string, data: Partial<InsertTestResult>) =>
-        fetchApi<TestResult>(`/test-results/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+    update: async (id: string, data: Partial<InsertTestResult>) => {
+        await delay(500);
+        const index = testResults.findIndex(r => r.id === id);
+        if (index === -1) throw new Error('Test result not found');
+        testResults[index] = { ...testResults[index], ...data };
+        return testResults[index];
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/test-results/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        testResults = testResults.filter(r => r.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -167,7 +258,10 @@ export const testResultsApi = {
 // ========================================
 
 export const examMasterApi = {
-    getAll: () => fetchApi<ExamMaster[]>('/test-results/exam-master'),
+    getAll: async () => {
+        await delay(300);
+        return [...examMaster];
+    },
 };
 
 // ========================================
@@ -175,18 +269,30 @@ export const examMasterApi = {
 // ========================================
 
 export const questionnaireApi = {
-    getTemplates: () => fetchApi<QuestionTemplate[]>('/questionnaire/templates'),
+    getTemplates: async () => {
+        await delay(300);
+        return [] as QuestionTemplate[];
+    },
 
-    getResponses: () => fetchApi<QuestionnaireResponse[]>('/questionnaire/responses'),
+    getResponses: async () => {
+        await delay(300);
+        return [...questionnaireResponses];
+    },
 
-    getResponsesByAnimalNumber: (animalNumber: string) =>
-        fetchApi<QuestionnaireResponse[]>(`/questionnaire/responses/animal/${animalNumber}`),
+    getResponsesByAnimalNumber: async (animalNumber: string) => {
+        await delay(300);
+        return questionnaireResponses.filter(r => r.animalNumber === animalNumber);
+    },
 
-    createResponse: (data: InsertQuestionnaireResponse) =>
-        fetchApi<QuestionnaireResponse>('/questionnaire/responses', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    createResponse: async (data: InsertQuestionnaireResponse) => {
+        await delay(500);
+        const newResponse: QuestionnaireResponse = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        questionnaireResponses.push(newResponse);
+        return newResponse;
+    },
 };
 
 // ========================================
@@ -194,18 +300,26 @@ export const questionnaireApi = {
 // ========================================
 
 export const filtersApi = {
-    getAll: () => fetchApi<UserFilter[]>('/filters'),
+    getAll: async () => {
+        await delay(300);
+        return [...userFilters];
+    },
 
-    create: (data: InsertUserFilter) =>
-        fetchApi<UserFilter>('/filters', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertUserFilter) => {
+        await delay(500);
+        const newFilter: UserFilter = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        userFilters.push(newFilter);
+        return newFilter;
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/filters/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        userFilters = userFilters.filter(f => f.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -213,18 +327,26 @@ export const filtersApi = {
 // ========================================
 
 export const clusterApi = {
-    getAll: () => fetchApi<ClusterAnalysis[]>('/filters/clusters'),
+    getAll: async () => {
+        await delay(300);
+        return [...clusters];
+    },
 
-    create: (data: InsertClusterAnalysis) =>
-        fetchApi<ClusterAnalysis>('/filters/clusters', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertClusterAnalysis) => {
+        await delay(500);
+        const newCluster: ClusterAnalysis = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        clusters.push(newCluster);
+        return newCluster;
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/filters/clusters/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        clusters = clusters.filter(c => c.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -232,27 +354,39 @@ export const clusterApi = {
 // ========================================
 
 export const medicationsApi = {
-    getAll: () => fetchApi<Medication[]>('/medications'),
+    getAll: async () => {
+        await delay(300);
+        return [...medications];
+    },
 
-    getByAnimalNumber: (animalNumber: string) =>
-        fetchApi<Medication[]>(`/medications/animal/${animalNumber}`),
+    getByAnimalNumber: async (animalNumber: string) => {
+        await delay(300);
+        return medications.filter(m => m.animalNumber === animalNumber);
+    },
 
-    create: (data: InsertMedication) =>
-        fetchApi<Medication>('/medications', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    create: async (data: InsertMedication) => {
+        await delay(500);
+        const newMedication: Medication = {
+            ...data,
+            id: Math.random().toString(36).substring(7),
+        };
+        medications.push(newMedication);
+        return newMedication;
+    },
 
-    update: (id: string, data: Partial<InsertMedication>) =>
-        fetchApi<Medication>(`/medications/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+    update: async (id: string, data: Partial<InsertMedication>) => {
+        await delay(500);
+        const index = medications.findIndex(m => m.id === id);
+        if (index === -1) throw new Error('Medication not found');
+        medications[index] = { ...medications[index], ...data };
+        return medications[index];
+    },
 
-    delete: (id: string) =>
-        fetchApi<{ success: boolean }>(`/medications/${id}`, {
-            method: 'DELETE',
-        }),
+    delete: async (id: string) => {
+        await delay(500);
+        medications = medications.filter(m => m.id !== id);
+        return { success: true };
+    },
 };
 
 // ========================================
@@ -260,32 +394,14 @@ export const medicationsApi = {
 // ========================================
 
 export const excelApi = {
-    upload: (file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        return fetch(`${API_BASE_URL}/excel/upload`, {
-            method: 'POST',
-            body: formData,
-        }).then(async (response) => {
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new ApiError(
-                    response.status,
-                    response.statusText,
-                    errorData.message || 'Upload failed',
-                );
-            }
-            return response.json();
-        });
+    upload: async (file: File) => {
+        await delay(1000);
+        return { success: true, message: 'Mock upload successful' };
     },
 
     download: async () => {
-        const response = await fetch(`${API_BASE_URL}/excel/download`);
-        if (!response.ok) {
-            throw new ApiError(response.status, response.statusText, 'Download failed');
-        }
-        return response.blob();
+        await delay(1000);
+        return new Blob(['Mock Excel Data'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     },
 };
 

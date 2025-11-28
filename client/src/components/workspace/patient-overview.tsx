@@ -29,7 +29,6 @@ export function PatientOverview() {
 
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold">개체 Overview</h2>
             <div className="space-y-4">
                 {/* Main Info Card */}
                 <Card>
