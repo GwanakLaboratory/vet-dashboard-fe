@@ -138,3 +138,21 @@ npm run check
 ### Mock Data 사용
 
 현재 프로젝트는 백엔드 없이 Mock Data를 사용하여 동작합니다. `client/src/lib/api.ts` 파일에서 Mock Data를 수정하거나 추가할 수 있습니다.
+
+## 배포 (Deployment)
+
+### Vercel 배포
+
+이 프로젝트는 [Vercel](https://vercel.com)에 쉽게 배포할 수 있습니다.
+
+1. Vercel 대시보드에서 **Add New Project**를 클릭합니다.
+2. GitHub 저장소를 연결합니다.
+3. 프로젝트 설정에서 다음 내용을 확인합니다:
+   - **Framework Preset**: Vite
+   - **Root Directory**: `.` (기본값)
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+4. **Deploy** 버튼을 클릭합니다.
+
+> **참고**: `vite.config.ts`에서 `root`가 `client`로 설정되어 있고, `outDir`가 `dist`로 설정되어 있으므로, Vercel의 기본 설정으로도 대부분 잘 동작합니다.
