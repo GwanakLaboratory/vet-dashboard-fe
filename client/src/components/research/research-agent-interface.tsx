@@ -87,7 +87,7 @@ export function ResearchAgentInterface() {
             // 실제 프로덕션 환경에서는 RAG(Retrieval-Augmented Generation) 등을 사용하여 관련성 높은 데이터만 추출해야 합니다.
             const contextData = {
                 columns: columnDefinitions.map(c => ({ key: c.key, label: c.label, type: c.type })),
-                patients: mockResearchData.patients.map(p => ({
+                patients: mockResearchData.patients.map((p: any) => ({
                     id: p.id,
                     name: p.name,
                     breed: p.breed,

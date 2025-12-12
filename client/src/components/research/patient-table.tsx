@@ -153,7 +153,7 @@ export function PatientTable({ data: initialData, columns, initialSelectedColumn
                     onClick={() => handleSort(col.key)}
                 >
                     <span>{col.label}</span>
-                    {sortConfig?.key === col.key ? (
+                    {sortConfig && sortConfig.key === col.key ? (
                         sortConfig.direction === 'asc' ? <ArrowUp className="ml-2 h-3 w-3" /> : <ArrowDown className="ml-2 h-3 w-3" />
                     ) : (
                         <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />

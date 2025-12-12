@@ -95,6 +95,9 @@ let examMaster: ExamMaster[] = [
         normalRangeMin: 5.5,
         normalRangeMax: 8.5,
         isQuantitative: true,
+        relatedBodyPart: null,
+        normalRangeText: null,
+        description: null,
     },
     {
         id: '2',
@@ -106,6 +109,9 @@ let examMaster: ExamMaster[] = [
         normalRangeMin: 6.0,
         normalRangeMax: 17.0,
         isQuantitative: true,
+        relatedBodyPart: null,
+        normalRangeText: null,
+        description: null,
     }
 ];
 
