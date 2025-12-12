@@ -204,22 +204,22 @@ export const mockImaging = {
         {
             id: 1,
             label: "X-ray 1",
-            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_1_thumb.jpg"
+            path: "https://placehold.co/600x400?text=X-ray+1"
         },
         {
             id: 2,
             label: "X-ray 2",
-            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_2_thumb.jpg"
+            path: "https://placehold.co/600x400?text=X-ray+2"
         },
         {
             id: 3,
             label: "X-ray 3",
-            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_3_thumb.jpg"
+            path: "https://placehold.co/600x400?text=X-ray+3"
         },
         {
             id: 4,
             label: "US 1",
-            path: "/documents/EXPORT_93_핑핑이(토이푸들)_20250922081143_4_thumb.jpg"
+            path: "https://placehold.co/600x400?text=US+1"
         },
     ],
     findings: {
@@ -241,43 +241,37 @@ export const mockDocuments = [
         name: "핑핑 검진결과서.pdf",
         date: "2024-05-25",
         type: "검진결과",
-        path: "/documents/핑핑 검진결과서.pdf"
+        path: "#"
     },
     {
         id: "doc-2",
         name: "핑핑 사전문진표.pdf",
         date: "2024-05-19",
         type: "문진표",
-        path: "/documents/핑핑 사전문진표.pdf"
+        path: "#"
     },
     {
         id: "doc-3",
         name: "핑핑 외부의뢰 (그린벳).pdf",
         date: "2024-05-21",
         type: "외부의뢰",
-        path: "/documents/핑핑_문진결과.pdf"
+        path: "#"
     },
     {
         id: "doc-4",
         name: "구름(20250096_하늘).pdf",
         date: "2024-04-15",
         type: "검진결과",
-        path: "/documents/구름(20250096_하늘).pdf"
+        path: "#"
     },
     {
         id: "doc-5",
         name: "까미(20250097_하늘).pdf",
         date: "2024-04-15",
         type: "검진결과",
-        path: "/documents/까미(20250097_하늘).pdf"
+        path: "#"
     },
-    {
-        id: "doc-6",
-        name: "핑핑이 소견.txt",
-        date: "2024-03-10",
-        type: "소견서",
-        path: "/documents/핑핑이 소견.txt"
-    }
+
 ];
 
 // 7. Admin / Data Integrity
@@ -358,20 +352,6 @@ export const mockVisitTimeline: VisitTimelineItem[] = [
                 type: "imaging",
                 date: "2024-04-15",
                 label: "복부 초음파"
-            }
-        ]
-    },
-    {
-        date: "2024-03-10",
-        title: "예방접종",
-        status: "completed",
-        description: "종합백신 5차",
-        dataAvailable: [
-            {
-                type: "document",
-                date: "2024-03-10",
-                label: "접종 기록",
-                documentId: "doc-6"
             }
         ]
     },
