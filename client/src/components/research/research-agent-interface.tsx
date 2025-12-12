@@ -52,7 +52,7 @@ export function ResearchAgentInterface() {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
-            content: "안녕하세요! 연구 데이터 분석 도우미입니다. 원하시는 데이터나 분석 내용을 말씀해주세요.\n예: '7살 이상 말티즈 중 심장질환이 있는 환자 리스트 보여줘' 또는 '나이와 체중의 상관관계를 보여줘'",
+            content: "안녕하세요! Groq 기반 연구 데이터 분석 도우미입니다. 원하시는 데이터나 분석 내용을 말씀해주세요.\n예: '7살 이상 말티즈 중 심장질환이 있는 환자 리스트 보여줘' 또는 '나이와 체중의 상관관계를 보여줘'",
             type: "text"
         }
     ]);
@@ -63,7 +63,7 @@ export function ResearchAgentInterface() {
         if (!apiKey) {
             setMessages(prev => [...prev, {
                 role: "assistant",
-                content: "API Key가 설정되지 않았습니다. 우측 상단의 열쇠 아이콘을 눌러 OpenAI API Key를 입력해주세요.",
+                content: "API Key가 설정되지 않았습니다. 우측 상단의 열쇠 아이콘을 눌러 Groq API Key를 입력해주세요.",
                 type: "text"
             }]);
             return;
@@ -78,6 +78,7 @@ export function ResearchAgentInterface() {
         try {
             const openai = new OpenAI({
                 apiKey: apiKey,
+                baseURL: "https://api.groq.com/openai/v1",
                 dangerouslyAllowBrowser: true // 클라이언트 사이드 데모를 위해 허용 (보안 주의)
             });
 
@@ -86,7 +87,7 @@ export function ResearchAgentInterface() {
             // 실제 프로덕션 환경에서는 RAG(Retrieval-Augmented Generation) 등을 사용하여 관련성 높은 데이터만 추출해야 합니다.
             const contextData = {
                 columns: columnDefinitions.map(c => ({ key: c.key, label: c.label, type: c.type })),
-                patients: mockResearchData.patients.slice(0, 50).map(p => ({
+                patients: mockResearchData.patients.map(p => ({
                     id: p.id,
                     name: p.name,
                     breed: p.breed,
@@ -102,7 +103,7 @@ export function ResearchAgentInterface() {
                 }))
             };
 
-            // OpenAI API 호출
+            // Groq API 호출
             const completion = await openai.chat.completions.create({
                 messages: [
                     {
@@ -150,13 +151,14 @@ export function ResearchAgentInterface() {
                     },
                     { role: "user", content: userMsg.content }
                 ],
-                model: "gpt-4o",
+                model: "llama-3.3-70b-versatile",
                 response_format: { type: "json_object" }
             });
 
             const responseContent = completion.choices[0].message.content;
             if (responseContent) {
                 const parsed = JSON.parse(responseContent);
+                console.log("AI Response:", parsed);
 
                 if (parsed.type === "data") {
                     setMessages(prev => [...prev, {
@@ -196,15 +198,15 @@ export function ResearchAgentInterface() {
                     </PopoverTrigger>
                     <PopoverContent className="w-80">
                         <div className="space-y-2">
-                            <h4 className="font-medium leading-none">OpenAI API Key</h4>
+                            <h4 className="font-medium leading-none">Groq API Key</h4>
                             <p className="text-sm text-muted-foreground">
-                                Enter your API key to enable real AI analysis.
+                                Enter your Groq API key to enable real AI analysis.
                             </p>
                             <Input
                                 type="password"
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
-                                placeholder="sk-..."
+                                placeholder="gsk_..."
                             />
                         </div>
                     </PopoverContent>
